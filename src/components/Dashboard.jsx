@@ -1,114 +1,219 @@
 import { useEffect, useState } from 'react';
-import { Plus, History, ArrowRight, TrendingUp } from 'lucide-react';
+import {
+  Plus, Clock, ArrowRight, TrendingUp, TrendingDown,
+  CheckCircle2, AlertCircle, Receipt, ChevronRight,
+  ShoppingCart, Zap, Droplets, Wifi, Home as HomeIcon,
+  Flame, Brush, UtensilsCrossed, Car, Pill, Film, Package, DollarSign,
+} from 'lucide-react';
 import { formatRupees } from '../utils/upiLink';
 import { calcGroupTotal, thisMonthExpenses } from '../utils/splitCalc';
 import MemberAvatar from './MemberAvatar';
 import { useNavigate } from 'react-router-dom';
 
-export default function Dashboard({ balances, expenses, currentMemberId, members, onAddExpense, pendingCount = 0, onShowPending }) {
+// ── Dashboard skeleton ────────────────────────────────────────────────────
+export function DashboardSkeleton() {
+  return (
+    <div className="space-y-5 max-w-[420px] mx-auto animate-pulse">
+      {/* Hero card skeleton */}
+      <div className="rounded-2xl p-5 h-40 skeleton" />
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl h-12 skeleton" />
+        <div className="rounded-xl h-12 skeleton" />
+      </div>
+      {/* Members strip */}
+      <div className="flex gap-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-1.5">
+            <div className="w-12 h-12 rounded-full skeleton" />
+            <div className="w-10 h-3 rounded skeleton" />
+          </div>
+        ))}
+      </div>
+      {/* Expense rows */}
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="rounded-2xl p-4 flex items-center gap-3 skeleton h-16" />
+      ))}
+    </div>
+  );
+}
+
+// ── Category icon map ─────────────────────────────────────────────────────
+const CAT = {
+  groceries:     { Icon: ShoppingCart,    color: '#27AE78' },
+  electricity:   { Icon: Zap,             color: '#F7C948' },
+  water:         { Icon: Droplets,        color: '#3b82f6' },
+  wifi:          { Icon: Wifi,            color: '#6366f1' },
+  rent:          { Icon: HomeIcon,        color: '#8b5cf6' },
+  gas:           { Icon: Flame,           color: '#FF6B35' },
+  cleaning:      { Icon: Brush,           color: '#06b6d4' },
+  food:          { Icon: UtensilsCrossed, color: '#f97316' },
+  transport:     { Icon: Car,             color: '#64748b' },
+  medicine:      { Icon: Pill,            color: '#ec4899' },
+  entertainment: { Icon: Film,            color: '#a855f7' },
+  household:     { Icon: Package,         color: '#14b8a6' },
+  other:         { Icon: DollarSign,      color: '#94a3b8' },
+};
+
+export function CategoryIcon({ category = 'other', purpose = '', size = 18 }) {
+  let key = category;
+  if (!key || key === 'other') {
+    const p = purpose.toLowerCase();
+    if (p.includes('grocer') || p.includes('vegeta')) key = 'groceries';
+    else if (p.includes('electric') || p.includes('bill')) key = 'electricity';
+    else if (p.includes('water'))   key = 'water';
+    else if (p.includes('wifi') || p.includes('internet')) key = 'wifi';
+    else if (p.includes('rent'))    key = 'rent';
+    else if (p.includes('gas'))     key = 'gas';
+    else if (p.includes('clean') || p.includes('maid')) key = 'cleaning';
+    else if (p.includes('food') || p.includes('pizza') || p.includes('zomato')) key = 'food';
+    else if (p.includes('petrol') || p.includes('cab') || p.includes('uber')) key = 'transport';
+    else if (p.includes('medic') || p.includes('pharma')) key = 'medicine';
+    else if (p.includes('movie') || p.includes('netflix')) key = 'entertainment';
+  }
+  const { Icon, color } = CAT[key] || CAT.other;
+  return (
+    <div
+      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+      style={{ background: `${color}18` }}
+    >
+      <Icon size={size} style={{ color }} strokeWidth={1.75} />
+    </div>
+  );
+}
+
+export default function Dashboard({
+  balances, expenses, currentMemberId, members,
+  onAddExpense, pendingCount = 0, onShowPending,
+}) {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
-
+  const [search, setSearch]   = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 50); return () => clearTimeout(t); }, []);
 
-  const myBalance     = balances.find((b) => b.memberId === currentMemberId);
-  const monthlyTotal  = calcGroupTotal(thisMonthExpenses(expenses));
-  const youOwe        = myBalance?.totalOwed   || 0;
-  const youreOwed     = myBalance?.totalOwedTo || 0;
-  const netBalance    = youreOwed - youOwe;
+  const myBalance    = balances.find((b) => b.memberId === currentMemberId);
+  const monthlyTotal = calcGroupTotal(thisMonthExpenses(expenses));
+  const youOwe       = myBalance?.totalOwed   || 0;
+  const youreOwed    = myBalance?.totalOwedTo || 0;
+  const netBalance   = youreOwed - youOwe;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 max-w-[420px] mx-auto">
 
-      {/* ── Pending bills banner ── */}
-      {pendingCount > 0 && (
+      {/* ── Pending banner ── */}      {pendingCount > 0 && (
         <button
           onClick={onShowPending}
-          className="w-full flex items-center gap-3 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl p-4 text-left shadow-lg shadow-orange-200/50 transition-all active:scale-[0.98] animate-fade-in-down"
+          className="w-full flex items-center gap-3 rounded-2xl p-4 text-left transition-all active:scale-[0.98] animate-fade-in-down"
+          style={{ background: '#FFEEE6', border: '1px solid #FFCDB4' }}
         >
-          <span className="text-3xl animate-wiggle">💸</span>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: '#FF6B3520' }}>
+            <AlertCircle size={18} style={{ color: '#FF6B35' }} strokeWidth={1.75} />
+          </div>
           <div className="flex-1">
-            <p className="font-bold text-white text-sm">
+            <p className="font-heading font-semibold text-sm" style={{ color: '#CC4A12' }}>
               {pendingCount} pending payment{pendingCount > 1 ? 's' : ''}
             </p>
-            <p className="text-xs text-orange-100 mt-0.5">Tap to pay your roommates now</p>
+            <p className="text-xs mt-0.5" style={{ color: '#FF6B35' }}>Tap to settle up now</p>
           </div>
-          <div className="bg-white/20 rounded-xl p-1.5">
-            <ArrowRight size={16} className="text-white" />
-          </div>
+          <ChevronRight size={16} style={{ color: '#FF6B35' }} />
         </button>
       )}
 
       {/* ── Hero balance card ── */}
-      <div className={`relative overflow-hidden rounded-3xl p-5 text-white shadow-xl shadow-indigo-200/50 ${visible ? 'animate-fade-in-up' : 'opacity-0'}`}
-        style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #a855f7 100%)' }}>
+      <div
+        className={`relative overflow-hidden rounded-2xl p-5 text-white ${visible ? 'animate-fade-in-up' : 'opacity-0'}`}
+        style={{ background: 'linear-gradient(135deg, #1A6B4A 0%, #27AE78 100%)', boxShadow: '0 8px 32px rgba(39,174,120,0.28)' }}
+      >
         {/* Decorative circles */}
-        <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
-        <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-white/10 rounded-full" />
-        <div className="absolute top-4 right-16 w-8 h-8 bg-white/10 rounded-full" />
+        <div className="absolute -top-10 -right-10 w-36 h-36 bg-white/10 rounded-full" />
+        <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full" />
 
         <div className="relative">
-          <p className="text-indigo-200 text-xs font-semibold uppercase tracking-widest mb-1">
+          <p className="text-green-200 text-xs font-semibold uppercase tracking-widest mb-2">
             Your Balance
           </p>
-          <p className={`text-4xl font-black mb-1 animate-count-up ${netBalance >= 0 ? 'text-white' : 'text-red-200'}`}>
+          <p className="text-4xl font-heading font-bold mb-1 tabular-nums animate-count-up">
             {netBalance >= 0 ? '+' : ''}{formatRupees(Math.abs(netBalance))}
           </p>
-          <p className="text-indigo-200 text-sm">
-            {netBalance > 0 ? '🎉 Others owe you' : netBalance < 0 ? '⚠️ You owe others' : '✅ All settled up!'}
-          </p>
+          <div className="flex items-center gap-1.5 text-green-100 text-sm mb-5">
+            {netBalance > 0
+              ? <><TrendingUp size={14} strokeWidth={2} /> Others owe you</>
+              : netBalance < 0
+              ? <><TrendingDown size={14} strokeWidth={2} /> You owe others</>
+              : <><CheckCircle2 size={14} strokeWidth={2} /> All settled up!</>}
+          </div>
 
-          {/* Mini stats row */}
-          <div className="flex gap-4 mt-4 pt-4 border-t border-white/20">
+          {/* Stats row */}
+          <div className="flex gap-4 pt-4 border-t border-white/20">
             <div>
-              <p className="text-indigo-200 text-xs">You owe</p>
-              <p className="text-white font-bold text-sm">{formatRupees(youOwe)}</p>
+              <p className="text-green-200 text-xs">You owe</p>
+              <p className="text-white font-heading font-semibold text-sm tabular-nums">{formatRupees(youOwe)}</p>
             </div>
             <div className="w-px bg-white/20" />
             <div>
-              <p className="text-indigo-200 text-xs">Owed to you</p>
-              <p className="text-white font-bold text-sm">{formatRupees(youreOwed)}</p>
+              <p className="text-green-200 text-xs">Owed to you</p>
+              <p className="text-white font-heading font-semibold text-sm tabular-nums">{formatRupees(youreOwed)}</p>
             </div>
             <div className="w-px bg-white/20" />
             <div>
-              <p className="text-indigo-200 text-xs">This month</p>
-              <p className="text-white font-bold text-sm">{formatRupees(monthlyTotal)}</p>
+              <p className="text-green-200 text-xs">This month</p>
+              <p className="text-white font-heading font-semibold text-sm tabular-nums">{formatRupees(monthlyTotal)}</p>
             </div>
           </div>
         </div>
+
+        {/* Settle up CTA */}
+        {(youOwe > 0 || pendingCount > 0) && (
+          <button
+            onClick={onShowPending}
+            className="mt-4 flex items-center gap-2 bg-white rounded-full px-5 py-2 text-sm font-heading font-semibold transition-all active:scale-95 hover:bg-green-50"
+            style={{ color: '#1A6B4A' }}
+          >
+            <CheckCircle2 size={15} strokeWidth={2} />
+            Settle up
+          </button>
+        )}
       </div>
 
       {/* ── Quick actions ── */}
       <div className={`grid grid-cols-2 gap-3 ${visible ? 'animate-fade-in-up delay-100' : 'opacity-0'}`}>
         <button
           onClick={onAddExpense}
-          className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] text-white rounded-2xl py-3.5 font-bold text-sm transition-all shadow-lg shadow-indigo-200/60"
+          className="flex items-center justify-center gap-2 text-white rounded-xl py-3.5 font-heading font-semibold text-sm transition-all active:scale-[0.97]"
+          style={{ background: '#27AE78', boxShadow: '0 4px 14px rgba(39,174,120,0.30)' }}
         >
-          <Plus size={18} strokeWidth={2.5} />
+          <Plus size={17} strokeWidth={2.5} />
           Add Expense
         </button>
         <button
           onClick={() => navigate('/history')}
-          className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 active:scale-[0.97] border-2 border-gray-100 text-gray-700 rounded-2xl py-3.5 font-bold text-sm transition-all shadow-sm"
+          className="flex items-center justify-center gap-2 rounded-xl py-3.5 font-heading font-semibold text-sm transition-all active:scale-[0.97] border"
+          style={{ background: '#FFFFFF', borderColor: '#E5E5E3', color: '#1C1C1E', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
         >
-          <History size={18} />
+          <Clock size={17} strokeWidth={1.75} />
           History
         </button>
       </div>
 
-      {/* ── Members strip ── */}
+      {/* ── Roommates strip ── */}
       {members.length > 0 && (
         <div className={`${visible ? 'animate-fade-in-up delay-200' : 'opacity-0'}`}>
           <div className="flex items-center justify-between mb-3">
-            <p className="font-bold text-gray-900 text-sm">Roommates</p>
-            <button onClick={() => navigate('/members')} className="text-xs text-indigo-500 font-semibold hover:text-indigo-700">
-              See all →
+            <p className="font-heading font-semibold text-sm" style={{ color: '#1C1C1E' }}>Roommates</p>
+            <button
+              onClick={() => navigate('/members')}
+              className="flex items-center gap-1 text-xs font-semibold transition-colors"
+              style={{ color: '#27AE78' }}
+            >
+              See all <ChevronRight size={13} />
             </button>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
             {members.slice(0, 6).map((member, i) => {
               const bal = balances.find((b) => b.memberId === member.id);
-              const net = (bal?.netBalance || 0);
+              const net = bal?.netBalance || 0;
               const isMe = member.id === currentMemberId;
               return (
                 <button
@@ -120,20 +225,26 @@ export default function Dashboard({ balances, expenses, currentMemberId, members
                   <div className="relative">
                     <MemberAvatar member={member} size="lg" />
                     {isMe && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-indigo-500 rounded-full border-2 border-white flex items-center justify-center">
-                        <span className="text-white text-[8px] font-bold">✓</span>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center"
+                        style={{ background: '#27AE78' }}>
+                        <CheckCircle2 size={8} className="text-white" strokeWidth={3} />
                       </div>
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-gray-700 max-w-[52px] truncate">
+                  <p className="text-xs font-semibold max-w-[52px] truncate" style={{ color: '#1C1C1E' }}>
                     {isMe ? 'You' : member.name.split(' ')[0]}
                   </p>
                   {bal && (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      net > 0 ? 'bg-green-100 text-green-700' :
-                      net < 0 ? 'bg-red-100 text-red-600' :
-                      'bg-gray-100 text-gray-500'
-                    }`}>
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums"
+                      style={
+                        net > 0
+                          ? { background: '#D4F5E7', color: '#1A6B4A' }
+                          : net < 0
+                          ? { background: '#FFEEE6', color: '#CC4A12' }
+                          : { background: '#F3F4F6', color: '#6B7280' }
+                      }
+                    >
                       {net === 0 ? '✓' : net > 0 ? `+${formatRupees(net)}` : formatRupees(net)}
                     </span>
                   )}
@@ -147,25 +258,63 @@ export default function Dashboard({ balances, expenses, currentMemberId, members
       {/* ── Recent expenses ── */}
       <div className={`${visible ? 'animate-fade-in-up delay-300' : 'opacity-0'}`}>
         <div className="flex items-center justify-between mb-3">
-          <p className="font-bold text-gray-900 text-sm">Recent Expenses</p>
-          <button onClick={() => navigate('/history')} className="text-xs text-indigo-500 font-semibold hover:text-indigo-700">
-            See all →
-          </button>
-        </div>
-
-        {expenses.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-gray-200">
-            <div className="text-5xl mb-3 animate-float">🧾</div>
-            <p className="font-bold text-gray-700">No expenses yet</p>
-            <p className="text-sm text-gray-400 mt-1">Tap "Add Expense" to get started</p>
+          <p className="font-heading font-semibold text-sm" style={{ color: '#1C1C1E' }}>Recent Expenses</p>
+          <div className="flex items-center gap-2">
+            {showSearch ? (
+              <div className="flex items-center gap-1">
+                <input autoFocus type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search…"
+                  className="border rounded-xl px-2.5 py-1 text-xs focus:outline-none input-focus w-28"
+                  style={{ borderColor: '#E5E5E3' }}
+                  onBlur={() => { if (!search) setShowSearch(false); }} />
+                {search && (
+                  <button onClick={() => { setSearch(''); setShowSearch(false); }}
+                    className="text-xs" style={{ color: '#9CA3AF' }}>✕</button>
+                )}
+              </div>
+            ) : (
+              <button onClick={() => setShowSearch(true)}
+                className="text-xs font-semibold" style={{ color: '#9CA3AF' }}>
+                🔍
+              </button>
+            )}
             <button
-              onClick={onAddExpense}
-              className="mt-4 inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 rounded-xl px-4 py-2 text-sm font-semibold hover:bg-indigo-100 transition-colors"
+              onClick={() => navigate('/history')}
+              className="flex items-center gap-1 text-xs font-semibold"
+              style={{ color: '#27AE78' }}
             >
-              <Plus size={16} /> Add first expense
+              See all <ChevronRight size={13} />
             </button>
           </div>
-        ) : (
+        </div>
+
+        {(() => {
+          const filtered = search.trim()
+            ? expenses.filter(e =>
+                e.purpose?.toLowerCase().includes(search.toLowerCase()) ||
+                e.payer_name?.toLowerCase().includes(search.toLowerCase()) ||
+                e.category?.toLowerCase().includes(search.toLowerCase())
+              )
+            : expenses.slice(0, 5);
+
+          if (expenses.length === 0) return (
+          <div className="text-center py-12 rounded-2xl border-2 border-dashed"
+            style={{ background: '#FFFFFF', borderColor: '#E5E5E3' }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+              style={{ background: '#F7F7F5' }}>
+              <Receipt size={26} style={{ color: '#6B7280' }} strokeWidth={1.5} />
+            </div>
+            <p className="font-heading font-semibold" style={{ color: '#1C1C1E' }}>No expenses yet</p>
+            <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Add your first expense to get started</p>
+            <button
+              onClick={onAddExpense}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
+              style={{ background: '#D4F5E7', color: '#1A6B4A' }}
+            >
+              <Plus size={15} /> Add first expense
+            </button>
+          </div>
+        ) ; (
           <div className="space-y-2">
             {expenses.slice(0, 5).map((expense, i) => {
               const isMyExpense = expense.payer_id === currentMemberId;
@@ -173,30 +322,40 @@ export default function Dashboard({ balances, expenses, currentMemberId, members
                 <button
                   key={expense.id}
                   onClick={() => navigate('/history')}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/30 active:scale-[0.98] transition-all text-left shadow-sm card-hover animate-fade-in-up"
-                  style={{ animationDelay: `${0.3 + i * 0.07}s` }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left card-hover animate-fade-in-up"
+                  style={{
+                    background: '#FFFFFF',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+                    animationDelay: `${0.3 + i * 0.07}s`,
+                  }}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-                    style={{ background: `${expense.payer_color || '#6366f1'}18` }}>
-                    {getCategoryEmoji(expense.purpose, expense.category)}
-                  </div>
+                  <CategoryIcon category={expense.category} purpose={expense.purpose} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate text-sm">{expense.purpose}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {isMyExpense ? '👤 You paid' : `${expense.payer_name}`} ·{' '}
+                    <p className="font-semibold truncate text-sm" style={{ color: '#1C1C1E' }}>
+                      {expense.purpose}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+                      {isMyExpense ? 'You paid' : expense.payer_name} ·{' '}
                       {new Date(expense.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                     </p>
                     {expense.notes && (
-                      <p className="text-xs text-gray-400 truncate mt-0.5 italic">"{expense.notes}"</p>
+                      <p className="text-xs truncate mt-0.5 italic" style={{ color: '#9CA3AF' }}>
+                        "{expense.notes}"
+                      </p>
                     )}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-gray-900 text-sm">{formatRupees(expense.total_amount)}</p>
+                    <p className="font-heading font-semibold text-sm tabular-nums" style={{ color: '#1C1C1E' }}>
+                      {formatRupees(expense.total_amount)}
+                    </p>
                     {isMyExpense ? (
-                      <p className="text-xs text-indigo-500 font-medium">You paid</p>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: '#D4F5E7', color: '#1A6B4A' }}>
+                        You paid
+                      </span>
                     ) : (
-                      <p className="text-xs text-gray-400">
-                        Your share: {formatRupees(Math.round(expense.total_amount / Math.max(members.length, 1)))}
+                      <p className="text-xs tabular-nums" style={{ color: '#6B7280' }}>
+                        Share: {formatRupees(Math.round(expense.total_amount / Math.max(members.length, 1)))}
                       </p>
                     )}
                   </div>
@@ -204,10 +363,11 @@ export default function Dashboard({ balances, expenses, currentMemberId, members
               );
             })}
           </div>
-        )}
+        );
+        })()}
       </div>
 
-      {/* ── This month's category breakdown ── */}
+      {/* ── Spending breakdown ── */}
       {expenses.length > 0 && (
         <SpendingBreakdown expenses={thisMonthExpenses(expenses)} visible={visible} />
       )}
@@ -215,101 +375,60 @@ export default function Dashboard({ balances, expenses, currentMemberId, members
   );
 }
 
-// ── Spending breakdown by category ────────────────────────────────────────
 function SpendingBreakdown({ expenses, visible }) {
   const navigate = useNavigate();
 
-  const categoryTotals = expenses.reduce((acc, e) => {
+  const totals = expenses.reduce((acc, e) => {
     const cat = e.category || 'other';
     acc[cat] = (acc[cat] || 0) + e.total_amount;
     return acc;
   }, {});
 
-  const sorted = Object.entries(categoryTotals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const total = sorted.reduce((s, [, v]) => s + v, 0);
-
+  const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const total  = sorted.reduce((s, [, v]) => s + v, 0);
   if (sorted.length === 0) return null;
-
-  const CAT_COLORS = {
-    groceries: '#10b981', electricity: '#f59e0b', water: '#3b82f6',
-    wifi: '#6366f1', rent: '#8b5cf6', gas: '#ef4444', cleaning: '#06b6d4',
-    food: '#f97316', transport: '#64748b', medicine: '#ec4899',
-    entertainment: '#a855f7', household: '#14b8a6', other: '#94a3b8',
-  };
 
   return (
     <div className={`${visible ? 'animate-fade-in-up delay-400' : 'opacity-0'}`}>
       <div className="flex items-center justify-between mb-3">
-        <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-          <TrendingUp size={15} className="text-indigo-500" />
-          This Month's Spending
+        <p className="font-heading font-semibold text-sm flex items-center gap-1.5" style={{ color: '#1C1C1E' }}>
+          <TrendingUp size={14} style={{ color: '#27AE78' }} />
+          This Month
         </p>
-        <button onClick={() => navigate('/history')} className="text-xs text-indigo-500 font-semibold hover:text-indigo-700">
-          Details →
+        <button onClick={() => navigate('/history')}
+          className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#27AE78' }}>
+          Details <ChevronRight size={13} />
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
-        {/* Stacked bar */}
-        <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
-          {sorted.map(([cat, val]) => (
-            <div
-              key={cat}
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${(val / total) * 100}%`,
-                background: CAT_COLORS[cat] || '#94a3b8',
-              }}
-            />
-          ))}
+      <div className="rounded-2xl p-4 space-y-3" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
+        {/* Bar */}
+        <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
+          {sorted.map(([cat, val]) => {
+            const { color } = CAT[cat] || CAT.other;
+            return (
+              <div key={cat} className="h-full rounded-full"
+                style={{ width: `${(val / total) * 100}%`, background: color }} />
+            );
+          })}
         </div>
-
         {/* Legend */}
         <div className="space-y-2">
-          {sorted.map(([cat, val]) => (
-            <div key={cat} className="flex items-center gap-2">
-              <div
-                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                style={{ background: CAT_COLORS[cat] || '#94a3b8' }}
-              />
-              <span className="text-xs text-gray-600 flex-1 capitalize">{cat}</span>
-              <span className="text-xs font-semibold text-gray-900">{formatRupees(val)}</span>
-              <span className="text-xs text-gray-400 w-8 text-right">
-                {Math.round((val / total) * 100)}%
-              </span>
-            </div>
-          ))}
+          {sorted.map(([cat, val]) => {
+            const { Icon, color } = CAT[cat] || CAT.other;
+            return (
+              <div key={cat} className="flex items-center gap-2">
+                <Icon size={13} style={{ color }} strokeWidth={1.75} className="flex-shrink-0" />
+                <span className="text-xs flex-1 capitalize" style={{ color: '#6B7280' }}>{cat}</span>
+                <span className="text-xs font-semibold tabular-nums" style={{ color: '#1C1C1E' }}>{formatRupees(val)}</span>
+                <span className="text-xs w-8 text-right" style={{ color: '#9CA3AF' }}>
+                  {Math.round((val / total) * 100)}%
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
-}
-
-/* Map expense purpose/category to an emoji */
-function getCategoryEmoji(purpose = '', category = '') {
-  if (category && category !== 'other') {
-    const map = {
-      groceries: '🛒', electricity: '⚡', water: '💧', wifi: '📶',
-      rent: '🏠', gas: '🔥', cleaning: '🧹', food: '🍕',
-      transport: '🚗', medicine: '💊', entertainment: '🎬',
-      household: '🧴', other: '💰',
-    };
-    if (map[category]) return map[category];
-  }
-  const p = purpose.toLowerCase();
-  if (p.includes('grocer') || p.includes('food') || p.includes('vegeta')) return '🛒';
-  if (p.includes('electric') || p.includes('power') || p.includes('bill')) return '⚡';
-  if (p.includes('water'))   return '💧';
-  if (p.includes('wifi') || p.includes('internet') || p.includes('broad')) return '📶';
-  if (p.includes('rent'))    return '🏠';
-  if (p.includes('gas'))     return '🔥';
-  if (p.includes('clean') || p.includes('maid')) return '🧹';
-  if (p.includes('pizza') || p.includes('zomato') || p.includes('swiggy')) return '🍕';
-  if (p.includes('petrol') || p.includes('fuel') || p.includes('cab') || p.includes('uber')) return '🚗';
-  if (p.includes('movie') || p.includes('netflix') || p.includes('prime')) return '🎬';
-  if (p.includes('medic') || p.includes('pharma')) return '💊';
-  return '💰';
 }

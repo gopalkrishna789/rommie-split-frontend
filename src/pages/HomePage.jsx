@@ -1,10 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Home, Users, History, Plus, LogOut, Share2, Check } from 'lucide-react';
+import { Home, Users, History, Plus, LogOut, Share2, Check, Bell, Activity } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from '../components/Dashboard';
+import { DashboardSkeleton } from '../components/Dashboard';
 import AddExpense from '../components/AddExpense';
 import NotificationBell from '../components/NotificationBell';
 import PendingBillsModal from '../components/PendingBillsModal';
+import ThemeToggle from '../components/ThemeToggle';
+import OnboardingTour from '../components/OnboardingTour';
 import { useExpenses } from '../hooks/useExpenses';
 import { useMembers } from '../hooks/useMembers';
 import { useSocket } from '../hooks/useSocket';
@@ -13,14 +16,15 @@ import { authApi, expensesApi } from '../utils/api';
 export default function HomePage() {
   const navigate = useNavigate();
   const [showAddExpense, setShowAddExpense] = useState(false);
-  const [showPending, setShowPending] = useState(false);
-  const [pendingBills, setPendingBills] = useState([]);
-  const [currentMember, setCurrentMember] = useState(null);
-  const [currentRoom, setCurrentRoom] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [showPending, setShowPending]       = useState(false);
+  const [pendingBills, setPendingBills]     = useState([]);
+  const [currentMember, setCurrentMember]  = useState(null);
+  const [currentRoom, setCurrentRoom]      = useState(null);
+  const [copied, setCopied]                = useState(false);
+  const [mounted, setMounted]              = useState(false);
+  const [showTour, setShowTour]            = useState(false);
 
-  const { expenses, balances, fetchExpenses, fetchBalances, addExpense, markSplitPaid, removeExpense, onExpenseAdded, onSplitPaid, onBalanceUpdated } = useExpenses();
+  const { expenses, balances, fetchExpenses, fetchBalances, addExpense, markSplitPaid, removeExpense, onExpenseAdded, onExpenseUpdated, onSplitPaid, onBalanceUpdated } = useExpenses();
   const { members, fetchMembers } = useMembers();
 
   useEffect(() => {
@@ -31,6 +35,18 @@ export default function HomePage() {
     setCurrentRoom(room);
     setMounted(true);
     Promise.all([fetchMembers(), fetchExpenses(), fetchBalances()]).then(loadPendingBills);
+    // Show onboarding tour on first visit
+    if (!localStorage.getItem('roomie_tour_done')) {
+      setTimeout(() => setShowTour(true), 800);
+    }
+    // Listen for service worker messages (notification click → open pending)
+    const handleSwMessage = (event) => {
+      if (event.data?.type === 'OPEN_PENDING') {
+        loadPendingBills().then(() => setShowPending(true));
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', handleSwMessage);
+    return () => navigator.serviceWorker?.removeEventListener('message', handleSwMessage);
   }, []);
 
   const loadPendingBills = useCallback(async () => {
@@ -48,9 +64,10 @@ export default function HomePage() {
     } catch (err) { console.error('Failed to load pending bills:', err); }
   }, []);
 
-  useSocket(currentRoom?.id, {
-    onExpenseAdded: (data) => { onExpenseAdded(data); fetchBalances(); loadPendingBills(); },
-    onSplitPaid:    (data) => { onSplitPaid(data); fetchBalances(); },
+  const { emit, connected } = useSocket(currentRoom?.id, {
+    onExpenseAdded:   (data) => { onExpenseAdded(data); fetchBalances(); loadPendingBills(); },
+    onExpenseUpdated: (data) => { onExpenseUpdated(data); },
+    onSplitPaid:      (data) => { onSplitPaid(data); fetchBalances(); },
     onBalanceUpdated,
     onExpenseDeleted: (data) => { removeExpense(data.expenseId); fetchBalances(); },
   });
@@ -61,8 +78,11 @@ export default function HomePage() {
     fetchBalances();
     setPendingBills((prev) => prev.filter((b) => b.split.id !== splitId));
   };
-  const handleLogout = async () => { await authApi.logout().catch(() => {}); localStorage.clear(); navigate('/join'); };
-
+  const handleLogout = async () => {
+    await authApi.logout().catch(() => {});
+    localStorage.clear();
+    navigate('/join');
+  };
   const handleShareCode = async () => {
     const code = currentRoom?.invite_code || currentRoom?.inviteCode;
     if (!code) return;
@@ -77,57 +97,76 @@ export default function HomePage() {
   const code = currentRoom?.invite_code || currentRoom?.inviteCode;
 
   return (
-    <div className={`min-h-screen bg-[#f8f7ff] ${mounted ? 'page-enter' : 'opacity-0'}`}>
+    <div className={`min-h-screen ${mounted ? 'page-enter' : 'opacity-0'}`} style={{ background: '#F7F7F5' }}>
 
-      {/* ── Top header ── */}
-      <header className="sticky top-0 z-40 glass border-b border-white/60 shadow-sm shadow-indigo-100/30">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      {/* ── Reconnecting banner ── */}
+      {mounted && !connected && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-2 py-2 text-xs font-semibold"
+          style={{ background: '#F7C948', color: '#996B00' }}>
+          <span className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
+          Reconnecting…
+        </div>
+      )}
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 glass border-b" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+        <div className="max-w-[420px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
           {/* Room info */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-9 h-9 gradient-bg rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-              <span className="text-lg">🏠</span>
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #1A6B4A, #27AE78)' }}>
+              <Home size={18} className="text-white" strokeWidth={1.75} />
             </div>
             <div className="min-w-0">
-              <h1 className="font-bold text-gray-900 text-sm leading-tight truncate">
+              <h1 className="font-heading font-semibold text-sm leading-tight truncate" style={{ color: '#1C1C1E' }}>
                 {currentRoom?.name || 'Roomie Split'}
               </h1>
-              <button onClick={handleShareCode} className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 transition-colors mt-0.5">
-                {copied ? <><Check size={10} className="text-green-500" /> Copied!</> : <><Share2 size={10} /> Code: {code}</>}
+              <button onClick={handleShareCode}
+                className="flex items-center gap-1 text-xs transition-colors mt-0.5"
+                style={{ color: '#27AE78' }}>
+                {copied
+                  ? <><Check size={10} /> Copied!</>
+                  : <><Share2 size={10} /> Code: {code}</>}
               </button>
             </div>
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {pendingCount > 0 && (
               <button
                 onClick={() => setShowPending(true)}
-                className="relative flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 py-1.5 text-xs font-bold transition-all shadow-md shadow-orange-200 animate-fade-in"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-heading font-semibold transition-all animate-fade-in"
+                style={{ background: '#FFEEE6', color: '#CC4A12', border: '1px solid #FFCDB4' }}
               >
-                {/* Pulse ring */}
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-                </span>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: '#FF6B35' }} />
                 {pendingCount} due
               </button>
             )}
+            <ThemeToggle />
             <NotificationBell />
-            <button onClick={handleLogout} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600" aria-label="Logout">
-              <LogOut size={17} />
+            <button onClick={handleLogout}
+              className="p-2 rounded-xl transition-colors"
+              style={{ color: '#6B7280' }}
+              aria-label="Logout">
+              <LogOut size={17} strokeWidth={1.75} />
             </button>
           </div>
         </div>
       </header>
 
       {/* ── Main ── */}
-      <main className="max-w-lg mx-auto px-4 py-5 pb-28">
-        <Dashboard
-          balances={balances} expenses={expenses}
-          currentMemberId={currentMember.id} members={members}
-          onAddExpense={() => setShowAddExpense(true)}
-          pendingCount={pendingCount} onShowPending={() => setShowPending(true)}
-        />
+      <main className="max-w-[420px] mx-auto px-4 py-5 pb-28">
+        {!mounted ? (
+          <DashboardSkeleton />
+        ) : (
+          <Dashboard
+            balances={balances} expenses={expenses}
+            currentMemberId={currentMember.id} members={members}
+            onAddExpense={() => setShowAddExpense(true)}
+            pendingCount={pendingCount} onShowPending={() => setShowPending(true)}
+          />
+        )}
       </main>
 
       {/* ── Bottom nav ── */}
@@ -140,6 +179,12 @@ export default function HomePage() {
       {showPending && (
         <PendingBillsModal pendingBills={pendingBills} currentMember={currentMember} onMarkPaid={handleMarkPaid} onClose={() => setShowPending(false)} />
       )}
+      {showTour && (
+        <OnboardingTour onDone={() => {
+          setShowTour(false);
+          localStorage.setItem('roomie_tour_done', '1');
+        }} />
+      )}
     </div>
   );
 }
@@ -149,34 +194,37 @@ function BottomNav({ onAddExpense }) {
   const location  = useLocation();
 
   const tabs = [
-    { path: '/',        icon: '🏠', label: 'Home' },
-    { path: '/members', icon: '👥', label: 'Members' },
-    { action: onAddExpense, icon: null, label: 'Add', primary: true },
-    { path: '/history', icon: '📋', label: 'History' },
+    { path: '/',          Icon: Home,     label: 'Home' },
+    { path: '/members',   Icon: Users,    label: 'Members' },
+    { action: onAddExpense, primary: true },
+    { path: '/activity',  Icon: Activity, label: 'Activity' },
+    { path: '/history',   Icon: History,  label: 'History' },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 safe-area-pb" aria-label="Main navigation">
-      {/* Frosted glass bar */}
-      <div className="glass border-t border-white/60 shadow-lg shadow-indigo-100/20">
-        <div className="max-w-lg mx-auto flex items-center justify-around px-4 py-2">
+      <div className="glass border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+        <div className="max-w-[420px] mx-auto flex items-center justify-around px-4 py-2">
           {tabs.map((tab, i) => {
-            const isActive = tab.path && location.pathname === tab.path;
-
             if (tab.primary) {
               return (
                 <button
                   key={i}
                   onClick={tab.action}
-                  className="relative -mt-6 w-14 h-14 gradient-bg rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-300/50 transition-all active:scale-95 hover:scale-105"
+                  className="relative -mt-7 w-14 h-14 rounded-2xl flex items-center justify-center transition-all active:scale-95 hover:scale-105"
+                  style={{
+                    background: 'linear-gradient(135deg, #1A6B4A, #27AE78)',
+                    boxShadow: '0 6px 20px rgba(39,174,120,0.40)',
+                  }}
                   aria-label="Add expense"
                 >
                   <Plus size={26} className="text-white" strokeWidth={2.5} />
-                  {/* Glow */}
-                  <div className="absolute inset-0 rounded-2xl bg-indigo-400 blur-md opacity-40 -z-10 scale-110" />
                 </button>
               );
             }
+
+            const isActive = tab.path && location.pathname === tab.path;
+            const { Icon } = tab;
 
             return (
               <button
@@ -186,10 +234,13 @@ function BottomNav({ onAddExpense }) {
                 aria-label={tab.label}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className={`text-xl transition-transform ${isActive ? 'scale-110' : 'scale-100 opacity-60'}`}>
-                  {tab.icon}
-                </span>
-                <span className={`text-xs font-semibold transition-colors ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}>
+                <Icon
+                  size={20}
+                  strokeWidth={isActive ? 2 : 1.75}
+                  style={{ color: isActive ? '#27AE78' : '#9CA3AF' }}
+                />
+                <span className="text-xs font-semibold transition-colors"
+                  style={{ color: isActive ? '#27AE78' : '#9CA3AF' }}>
                   {tab.label}
                 </span>
                 {isActive && <div className="nav-active-dot" />}

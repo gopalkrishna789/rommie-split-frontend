@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import HistoryPage from './pages/HistoryPage';
 import MembersPage from './pages/MembersPage';
 import MemberDetailPage from './pages/MemberDetailPage';
+import ActivityPage from './pages/ActivityPage';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('roomie_token');
@@ -53,6 +54,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MemberDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/activity"
+          element={
+            <ProtectedRoute>
+              <ActivityPage />
             </ProtectedRoute>
           }
         />

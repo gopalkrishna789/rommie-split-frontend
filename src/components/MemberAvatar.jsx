@@ -1,5 +1,5 @@
 /**
- * Reusable member avatar with initials and color
+ * Reusable member avatar — shows profile photo if available, otherwise initials
  */
 export default function MemberAvatar({ member, size = 'md', className = '' }) {
   const sizes = {
@@ -8,6 +8,17 @@ export default function MemberAvatar({ member, size = 'md', className = '' }) {
     lg: 'w-12 h-12 text-base',
     xl: 'w-16 h-16 text-xl',
   };
+
+  if (member?.photo_base64) {
+    return (
+      <img
+        src={member.photo_base64}
+        alt={member?.name || 'Member'}
+        className={`${sizes[size]} rounded-full object-cover flex-shrink-0 ${className}`}
+        title={member?.name}
+      />
+    );
+  }
 
   return (
     <div

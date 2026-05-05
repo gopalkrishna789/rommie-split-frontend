@@ -1,86 +1,79 @@
 import { useState } from 'react';
-import { ChevronDown, Receipt, Trash2 } from 'lucide-react';
+import { ChevronDown, Receipt, Trash2, CheckCircle2, Bell, History } from 'lucide-react';
 import { formatRupees } from '../utils/upiLink';
 import MemberAvatar from './MemberAvatar';
 import PaymentCard from './PaymentCard';
 import { expensesApi } from '../utils/api';
+import { CategoryIcon } from './Dashboard';
 
-// Category emoji map (mirrors Dashboard)
-function getCategoryEmoji(purpose = '', category = '') {
-  if (category && category !== 'other') {
-    const map = {
-      groceries: '🛒', electricity: '⚡', water: '💧', wifi: '📶',
-      rent: '🏠', gas: '🔥', cleaning: '🧹', food: '🍕',
-      transport: '🚗', medicine: '💊', entertainment: '🎬',
-      household: '🧴', other: '💰',
-    };
-    if (map[category]) return map[category];
-  }
-  const p = purpose.toLowerCase();
-  if (p.includes('grocer') || p.includes('food') || p.includes('vegeta')) return '🛒';
-  if (p.includes('electric') || p.includes('power') || p.includes('bill')) return '⚡';
-  if (p.includes('water'))   return '💧';
-  if (p.includes('wifi') || p.includes('internet')) return '📶';
-  if (p.includes('rent'))    return '🏠';
-  if (p.includes('gas'))     return '🔥';
-  if (p.includes('clean') || p.includes('maid')) return '🧹';
-  if (p.includes('pizza') || p.includes('zomato') || p.includes('swiggy')) return '🍕';
-  if (p.includes('petrol') || p.includes('fuel') || p.includes('cab')) return '🚗';
-  if (p.includes('movie') || p.includes('netflix')) return '🎬';
-  if (p.includes('medic') || p.includes('pharma')) return '💊';
-  return '💰';
-}
-
-/**
- * ExpenseHistory — paginated list of all expenses with split details
- */
 export default function ExpenseHistory({
-  expenses,
-  pagination,
-  onLoadMore,
-  loading,
-  currentMemberId,
-  members,
-  onMarkPaid,
-  onDeleteExpense,
-  filter = 'all',
+  expenses, pagination, onLoadMore, loading,
+  currentMemberId, members, onMarkPaid, onDeleteExpense, filter = 'all',
 }) {
-  const [expandedId, setExpandedId] = useState(null);
+  const [expandedId, setExpandedId]         = useState(null);
   const [splitsByExpense, setSplitsByExpense] = useState({});
-  const [loadingSplits, setLoadingSplits] = useState({});
-  const [payLaterIds, setPayLaterIds] = useState(new Set());
+  const [loadingSplits, setLoadingSplits]   = useState({});
+  const [payLaterIds, setPayLaterIds]       = useState(new Set());
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting]             = useState(false);
+  const [attemptsByExpense, setAttemptsByExpense] = useState({});
+  const [remindingId, setRemindingId]       = useState(null);
+  const [remindMsg, setRemindMsg]           = useState({});
 
   const toggleExpense = async (expenseId) => {
     if (expandedId === expenseId) { setExpandedId(null); return; }
     setExpandedId(expenseId);
     if (!splitsByExpense[expenseId]) {
-      setLoadingSplits((prev) => ({ ...prev, [expenseId]: true }));
+      setLoadingSplits((p) => ({ ...p, [expenseId]: true }));
       try {
         const res = await expensesApi.get(expenseId);
-        setSplitsByExpense((prev) => ({ ...prev, [expenseId]: res.data.splits }));
-      } catch (err) {
-        console.error('Failed to load splits:', err);
-      } finally {
-        setLoadingSplits((prev) => ({ ...prev, [expenseId]: false }));
-      }
+        setSplitsByExpense((p) => ({ ...p, [expenseId]: res.data.splits }));
+        // Load attempt counts for each split (non-blocking)
+        const splits = res.data.splits;
+        for (const split of splits) {
+          if (!split.paid) {
+            expensesApi.getAttempts(split.id).then(r => {
+              setAttemptsByExpense(prev => ({ ...prev, [split.id]: r.data.attempts || [] }));
+            }).catch(() => {});
+          }
+        }
+      } catch (err) { console.error('Failed to load splits:', err); }
+      finally { setLoadingSplits((p) => ({ ...p, [expenseId]: false })); }
     }
   };
 
-  const handleMarkPaid = async (splitId, expenseId) => {
+  const handleSendReminder = async (splitId, memberName) => {
+    setRemindingId(splitId);
+    try {
+      await expensesApi.sendReminder(splitId);
+      setRemindMsg(p => ({ ...p, [splitId]: `Reminder sent to ${memberName}` }));
+      setTimeout(() => setRemindMsg(p => { const n = {...p}; delete n[splitId]; return n; }), 3000);
+    } catch (err) {
+      setRemindMsg(p => ({ ...p, [splitId]: err.response?.data?.error || 'Failed to send' }));
+      setTimeout(() => setRemindMsg(p => { const n = {...p}; delete n[splitId]; return n; }), 3000);
+    } finally {
+      setRemindingId(null);
+    }
+  };
+
+const handleMarkPaid = async (splitId, expenseId) => {
     await onMarkPaid(splitId);
-    // Update local split state
-    setSplitsByExpense((prev) => ({
-      ...prev,
-      [expenseId]: (prev[expenseId] || []).map((s) =>
-        s.id === splitId ? { ...s, paid: true } : s
-      ),
+    setSplitsByExpense((p) => ({
+      ...p,
+      [expenseId]: (p[expenseId] || []).map((s) => s.id === splitId ? { ...s, paid: true } : s),
     }));
   };
 
-  const handlePayLater = (splitId) => {
-    setPayLaterIds((prev) => new Set([...prev, splitId]));
+  const handlePayerConfirm = async (splitId, expenseId) => {
+    try {
+      await expensesApi.payerConfirm(splitId);
+      setSplitsByExpense((p) => ({
+        ...p,
+        [expenseId]: (p[expenseId] || []).map((s) => s.id === splitId ? { ...s, paid: true } : s),
+      }));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to mark as paid');
+    }
   };
 
   const handleDeleteExpense = async (expenseId) => {
@@ -91,45 +84,33 @@ export default function ExpenseHistory({
       if (onDeleteExpense) onDeleteExpense(expenseId);
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to delete expense');
-    } finally {
-      setDeleting(false);
-    }
+    } finally { setDeleting(false); }
   };
 
-  /**
-   * An expense is fully settled when:
-   * - splits have been loaded for it, AND
-   * - every non-payer split is paid
-   */
   const isFullySettled = (expenseId, payerId) => {
     const splits = splitsByExpense[expenseId];
     if (!splits || splits.length === 0) return false;
-    const nonPayerSplits = splits.filter((s) => s.member_id !== payerId);
-    if (nonPayerSplits.length === 0) return false; // solo expense, no one to settle
-    return nonPayerSplits.every((s) => s.paid);
+    const nonPayer = splits.filter((s) => s.member_id !== payerId);
+    return nonPayer.length > 0 && nonPayer.every((s) => s.paid);
   };
 
-  // Apply filter
   const filteredExpenses = expenses.filter((expense) => {
     if (filter === 'all') return true;
     const splits = splitsByExpense[expense.id] || [];
     const mySplit = splits.find((s) => s.member_id === currentMemberId);
     if (filter === 'pending') {
-      // Show if I have an unpaid split OR if I'm the payer and someone owes me
-      if (expense.payer_id === currentMemberId) return true; // I paid, show always
+      if (expense.payer_id === currentMemberId) return true;
       return mySplit && !mySplit.paid;
     }
-    if (filter === 'paid') {
-      return !mySplit || mySplit.paid;
-    }
+    if (filter === 'paid') return !mySplit || mySplit.paid;
     return true;
   });
 
   if (!loading && expenses.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-        <Receipt size={48} className="mb-3 opacity-40" />
-        <p className="font-medium">No expenses yet</p>
+      <div className="flex flex-col items-center justify-center py-16" style={{ color: '#9CA3AF' }}>
+        <Receipt size={44} className="mb-3 opacity-40" strokeWidth={1.5} />
+        <p className="font-heading font-semibold" style={{ color: '#6B7280' }}>No expenses yet</p>
         <p className="text-sm mt-1">Add your first expense to get started</p>
       </div>
     );
@@ -138,207 +119,220 @@ export default function ExpenseHistory({
   return (
     <div className="space-y-3">
       {filteredExpenses.map((expense) => {
-        const isExpanded = expandedId === expense.id;
-        const splits = splitsByExpense[expense.id] || [];
-        const mySplit = splits.find((s) => s.member_id === currentMemberId);
-        const payer = members.find((m) => m.id === expense.payer_id);
-        const isMyExpense = expense.payer_id === currentMemberId;
-        const iHaveUnpaid = mySplit && !mySplit.paid && !isMyExpense;
-        const fullySettled = isFullySettled(expense.id, expense.payer_id);
+        const isExpanded        = expandedId === expense.id;
+        const splits            = splitsByExpense[expense.id] || [];
+        const mySplit           = splits.find((s) => s.member_id === currentMemberId);
+        const payer             = members.find((m) => m.id === expense.payer_id);
+        const isMyExpense       = expense.payer_id === currentMemberId;
+        const iHaveUnpaid       = mySplit && !mySplit.paid && !isMyExpense;
+        const fullySettled      = isFullySettled(expense.id, expense.payer_id);
         const isConfirmingDelete = confirmDeleteId === expense.id;
 
         return (
-          <div
-            key={expense.id}
-            className={`rounded-2xl border overflow-hidden ${
-              fullySettled
-                ? 'border-green-200 bg-white'
-                : iHaveUnpaid
-                ? 'border-orange-200 bg-white'
-                : 'border-gray-200 bg-white'
-            }`}
-          >
-            {/* Expense row */}
-            <button
-              onClick={() => toggleExpense(expense.id)}
-              className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
-              aria-expanded={isExpanded}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-                style={{ background: `${expense.payer_color || '#6366f1'}15` }}
-              >
-                {getCategoryEmoji(expense.purpose, expense.category)}
-              </div>
+          <div key={expense.id} className="rounded-2xl overflow-hidden"
+            style={{
+              background: '#FFFFFF',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+              border: `1px solid ${fullySettled ? '#A8E6C8' : iHaveUnpaid ? '#FFCDB4' : '#E5E5E3'}`,
+            }}>
+
+            {/* Row */}
+            <button onClick={() => toggleExpense(expense.id)}
+              className="w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-gray-50"
+              aria-expanded={isExpanded}>
+              <CategoryIcon category={expense.category} purpose={expense.purpose} />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 truncate">{expense.purpose}</p>
-                <p className="text-xs text-gray-500">
+                <p className="font-semibold truncate text-sm" style={{ color: '#1C1C1E' }}>{expense.purpose}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
                   {isMyExpense ? 'You' : expense.payer_name} ·{' '}
                   {new Date(expense.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                 </p>
                 {expense.notes && (
-                  <p className="text-xs text-gray-400 truncate italic mt-0.5">"{expense.notes}"</p>
+                  <p className="text-xs truncate italic mt-0.5" style={{ color: '#9CA3AF' }}>"{expense.notes}"</p>
                 )}
               </div>
-              <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                <span className="font-bold text-gray-900 text-sm">
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span className="font-heading font-semibold text-sm tabular-nums" style={{ color: '#1C1C1E' }}>
                   {formatRupees(expense.total_amount)}
                 </span>
                 {iHaveUnpaid && (
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 text-orange-700">
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold badge-owe">
                     Owe {formatRupees(mySplit.share + mySplit.carry_forward)}
                   </span>
                 )}
                 {mySplit?.paid && !isMyExpense && (
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
-                    ✓ Paid
-                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold badge-settled">Paid</span>
                 )}
                 {isMyExpense && !fullySettled && (
-                  <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-                    You paid
-                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: '#EEF2FF', color: '#4338CA' }}>You paid</span>
                 )}
                 {fullySettled && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                    ✅ All settled
-                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold badge-settled">All settled</span>
                 )}
               </div>
-              <ChevronDown
-                size={16}
-                className={`text-gray-400 flex-shrink-0 transition-transform ml-1 ${isExpanded ? 'rotate-180' : ''}`}
-              />
+              <ChevronDown size={15} strokeWidth={1.75} style={{ color: '#9CA3AF', flexShrink: 0 }}
+                className={`ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Delete bar — shown when all roommates have paid */}
+            {/* Settled bar */}
             {fullySettled && !isConfirmingDelete && (
-              <div className="flex items-center justify-between px-4 py-2 bg-green-50 border-t border-green-100">
-                <p className="text-xs text-green-700 font-medium">Everyone has paid 🎉</p>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(expense.id); }}
-                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                  aria-label="Delete expense"
-                >
-                  <Trash2 size={13} />
-                  Delete
+              <div className="flex items-center justify-between px-4 py-2 border-t"
+                style={{ background: '#F7FFF9', borderColor: '#A8E6C8' }}>
+                <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: '#1A6B4A' }}>
+                  <CheckCircle2 size={13} strokeWidth={2} /> Everyone has paid
+                </p>
+                <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(expense.id); }}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
+                  style={{ color: '#CC4A12' }}>
+                  <Trash2 size={12} strokeWidth={1.75} /> Delete
                 </button>
               </div>
             )}
 
             {/* Confirm delete */}
             {isConfirmingDelete && (
-              <div className="flex items-center justify-between px-4 py-3 bg-red-50 border-t border-red-100 gap-3">
-                <p className="text-xs text-red-700 font-medium flex-1">
+              <div className="flex items-center justify-between px-4 py-3 border-t gap-3"
+                style={{ background: '#FFEEE6', borderColor: '#FFCDB4' }}>
+                <p className="text-xs font-semibold flex-1" style={{ color: '#CC4A12' }}>
                   Delete "{expense.purpose}"? This can't be undone.
                 </p>
                 <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => setConfirmDeleteId(null)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
-                  >
+                  <button onClick={() => setConfirmDeleteId(null)}
+                    className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+                    style={{ borderColor: '#E5E5E3', color: '#6B7280', background: '#FFFFFF' }}>
                     Cancel
                   </button>
-                  <button
-                    onClick={() => handleDeleteExpense(expense.id)}
-                    disabled={deleting}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors disabled:opacity-60 flex items-center gap-1"
-                  >
+                  <button onClick={() => handleDeleteExpense(expense.id)} disabled={deleting}
+                    className="text-xs px-3 py-1.5 rounded-lg text-white font-semibold transition-colors disabled:opacity-60 flex items-center gap-1"
+                    style={{ background: '#FF6B35' }}>
                     {deleting
                       ? <span className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
-                      : <Trash2 size={12} />}
-                    Delete
+                      : <><Trash2 size={12} strokeWidth={1.75} /> Delete</>}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Splits detail */}
+            {/* Splits */}
             {isExpanded && (
-              <div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50">
+              <div className="border-t p-4 space-y-3" style={{ background: '#F7F7F5', borderColor: '#E5E5E3' }}>
                 {loadingSplits[expense.id] ? (
                   <div className="flex justify-center py-4">
-                    <span className="animate-spin w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full" />
+                    <span className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full"
+                      style={{ borderColor: '#27AE78', borderTopColor: 'transparent' }} />
                   </div>
                 ) : splits.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-2">No splits data</p>
+                  <p className="text-sm text-center py-2" style={{ color: '#9CA3AF' }}>No splits data</p>
                 ) : (
                   splits.map((split) => {
-                    const splitMember = members.find((m) => m.id === split.member_id);
-                    const isCurrentUserSplit = split.member_id === currentMemberId;
-                    const isPayerSplit = split.member_id === expense.payer_id;
-                    const isPayLater = payLaterIds.has(split.id);
+                    const splitMember      = members.find((m) => m.id === split.member_id);
+                    const isCurrentUser    = split.member_id === currentMemberId;
+                    const isPayerSplit     = split.member_id === expense.payer_id;
+                    const isPayLater       = payLaterIds.has(split.id);
 
-                    // Payer's own split — skip (auto-paid)
                     if (isPayerSplit) return null;
 
-                    // Current user's unpaid split → show full PaymentCard
-                    if (isCurrentUserSplit && !split.paid && payer && !isPayLater) {
+                    if (isCurrentUser && !split.paid && payer && !isPayLater) {
                       return (
-                        <PaymentCard
-                          key={split.id}
-                          expense={expense}
-                          payer={payer}
-                          debtor={splitMember}
-                          currentShare={split.share}
-                          carryForward={split.carry_forward}
-                          splitId={split.id}
+                        <PaymentCard key={split.id} expense={expense} payer={payer}
+                          debtor={splitMember} currentShare={split.share}
+                          carryForward={split.carry_forward} splitId={split.id}
                           onMarkPaid={(id) => handleMarkPaid(id, expense.id)}
-                          onPayLater={handlePayLater}
-                          isPaid={false}
-                        />
+                          onPayLater={(id) => setPayLaterIds((p) => new Set([...p, id]))}
+                          isPaid={false} />
                       );
                     }
 
-                    // Pay later dismissed — show compact row
-                    if (isCurrentUserSplit && !split.paid && isPayLater) {
+                    if (isCurrentUser && !split.paid && isPayLater) {
                       return (
-                        <div key={split.id} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-orange-100">
+                        <div key={split.id} className="flex items-center gap-3 p-3 rounded-xl border"
+                          style={{ background: '#FFFFFF', borderColor: '#FFCDB4' }}>
                           <MemberAvatar member={splitMember} size="sm" />
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-800">You (pay later)</p>
+                            <p className="text-sm font-semibold" style={{ color: '#1C1C1E' }}>You (pay later)</p>
                           </div>
-                          <span className="text-sm font-semibold text-orange-600">
+                          <span className="text-sm font-heading font-semibold tabular-nums" style={{ color: '#FF6B35' }}>
                             {formatRupees(split.share + split.carry_forward)}
                           </span>
-                          <button
-                            onClick={() => setPayLaterIds((prev) => {
-                              const n = new Set(prev); n.delete(split.id); return n;
-                            })}
-                            className="text-xs text-indigo-600 hover:underline"
-                          >
+                          <button onClick={() => setPayLaterIds((p) => { const n = new Set(p); n.delete(split.id); return n; })}
+                            className="text-xs font-semibold" style={{ color: '#27AE78' }}>
                             Pay now
                           </button>
                         </div>
                       );
                     }
 
-                    // Other member's split — simple row
                     return (
-                      <div key={split.id} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                      <div key={split.id} className="flex items-center gap-3 p-3 rounded-xl border"
+                        style={{ background: '#FFFFFF', borderColor: '#E5E5E3' }}>
                         <MemberAvatar member={splitMember} size="sm" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">
-                            {splitMember?.name || 'Unknown'}
-                            {isCurrentUserSplit && ' (You)'}
+                          <p className="text-sm font-semibold truncate" style={{ color: '#1C1C1E' }}>
+                            {splitMember?.name || 'Unknown'}{isCurrentUser && ' (You)'}
                           </p>
                           {split.carry_forward > 0 && (
-                            <p className="text-xs text-orange-500">
+                            <p className="text-xs" style={{ color: '#FF6B35' }}>
                               +{formatRupees(split.carry_forward)} prev dues
                             </p>
                           )}
+                          {/* Partial payment progress */}
+                          {split.amount_paid > 0 && !split.paid && (
+                            <div className="mt-1">
+                              <div className="flex justify-between text-xs mb-0.5" style={{ color: '#6B7280' }}>
+                                <span>Paid {formatRupees(split.amount_paid)}</span>
+                                <span>{Math.round((split.amount_paid / (split.share + split.carry_forward)) * 100)}%</span>
+                              </div>
+                              <div className="h-1 rounded-full bg-gray-200 overflow-hidden">
+                                <div className="h-full rounded-full bg-green-400"
+                                  style={{ width: `${Math.min((split.amount_paid / (split.share + split.carry_forward)) * 100, 100)}%` }} />
+                              </div>
+                            </div>
+                          )}
+                          {/* Attempt count badge */}
+                          {!split.paid && attemptsByExpense[split.id]?.length > 0 && (
+                            <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: '#6366f1' }}>
+                              <History size={10} strokeWidth={2} />
+                              {attemptsByExpense[split.id].length} payment attempt{attemptsByExpense[split.id].length !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                          {remindMsg[split.id] && (
+                            <p className="text-xs mt-0.5 font-medium" style={{ color: remindMsg[split.id].includes('sent') ? '#27AE78' : '#CC4A12' }}>
+                              {remindMsg[split.id]}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {formatRupees(split.share)}
-                          </p>
-                        </div>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                            split.paid ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {split.paid ? '✓ Paid' : 'Pending'}
+                        <p className="text-sm font-heading font-semibold tabular-nums" style={{ color: '#1C1C1E' }}>
+                          {formatRupees(split.share)}
+                        </p>
+                        {!split.paid && expense.payer_id === currentMemberId && (
+                          <div className="flex flex-col gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => handlePayerConfirm(split.id, expense.id)}
+                              className="text-xs font-semibold px-2 py-1 rounded-lg transition-colors"
+                              style={{ background: '#D4F5E7', color: '#1A6B4A' }}
+                              title="Mark as received (cash/outside payment)">
+                              ✓ Received
+                            </button>
+                            <button
+                              onClick={() => handleSendReminder(split.id, splitMember?.name)}
+                              disabled={remindingId === split.id}
+                              className="text-xs font-semibold px-2 py-1 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                              style={{ background: '#EEF2FF', color: '#4338CA' }}
+                              title="Send payment reminder email">
+                              {remindingId === split.id
+                                ? <span className="animate-spin w-3 h-3 border border-current border-t-transparent rounded-full" />
+                                : <><Bell size={10} strokeWidth={2} /> Remind</>}
+                            </button>
+                          </div>
+                        )}
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
+                          style={split.paid
+                            ? { background: '#D4F5E7', color: '#1A6B4A' }
+                            : split.amount_paid > 0
+                            ? { background: '#FFF8E0', color: '#996B00' }
+                            : { background: '#FFF8E0', color: '#996B00' }}>
+                          {split.paid ? 'Paid' : split.amount_paid > 0 ? 'Partial' : 'Pending'}
                         </span>
                       </div>
                     );
@@ -350,14 +344,11 @@ export default function ExpenseHistory({
         );
       })}
 
-      {/* Load more */}
       {pagination?.hasMore && (
-        <button
-          onClick={onLoadMore}
-          disabled={loading}
-          className="w-full py-3 text-sm text-indigo-600 font-medium hover:bg-indigo-50 rounded-2xl border border-indigo-200 transition-colors disabled:opacity-60"
-        >
-          {loading ? 'Loading...' : 'Load more expenses'}
+        <button onClick={onLoadMore} disabled={loading}
+          className="w-full py-3 text-sm font-semibold rounded-2xl border transition-colors disabled:opacity-60"
+          style={{ borderColor: '#A8E6C8', color: '#27AE78', background: '#FFFFFF' }}>
+          {loading ? 'Loading…' : 'Load more expenses'}
         </button>
       )}
     </div>

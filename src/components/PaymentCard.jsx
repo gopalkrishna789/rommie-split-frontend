@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Copy, Check, CheckCircle2, Clock, Zap, Monitor, AlertCircle } from 'lucide-react';
+import { Copy, Check, CheckCircle2, Clock, Zap, Monitor, AlertCircle, ChevronDown, Bell } from 'lucide-react';
 import {
   buildUpiLink,
   launchUpiPayment,
@@ -33,17 +33,26 @@ export default function PaymentCard({
   onPayLater,
   isPaid = false,
   compact = false,
+  amountPaid = 0,       // already paid amount (for partial payment display)
+  onPartialPay,         // optional: called with amount when partial payment submitted
 }) {
   const [copied, setCopied]           = useState(false);
   const [copiedLink, setCopiedLink]   = useState(false);
   const [marking, setMarking]         = useState(false);
   const [paid, setPaid]               = useState(isPaid);
   const [showApps, setShowApps]       = useState(false);
-  // 'idle' | 'launched' | 'confirming' | 'failed_confirm'
   const [payState, setPayState]       = useState('idle');
   const [launchedApp, setLaunchedApp] = useState(null);
+  // Partial payment
+  const [showPartial, setShowPartial] = useState(false);
+  const [partialAmount, setPartialAmount] = useState('');
+  const [partialLoading, setPartialLoading] = useState(false);
+  const [partialError, setPartialError] = useState('');
 
   const totalToPay  = currentShare + (carryForward || 0);
+  const alreadyPaid = amountPaid || 0;
+  const remaining   = totalToPay - alreadyPaid;
+  const hasPartial  = alreadyPaid > 0 && alreadyPaid < totalToPay;
   const mobile      = isMobile();
   const android     = isAndroid();
   const ios         = isIOS();
@@ -175,6 +184,29 @@ export default function PaymentCard({
     }
   };
 
+  // ── Partial payment ──────────────────────────────────────────────────────
+  const handlePartialPay = async () => {
+    setPartialError('');
+    const paise = Math.round(parseFloat(partialAmount || 0) * 100);
+    if (!paise || paise <= 0) { setPartialError('Enter a valid amount'); return; }
+    if (paise > remaining) { setPartialError(`Cannot exceed remaining ₹${(remaining / 100).toFixed(2)}`); return; }
+    setPartialLoading(true);
+    try {
+      const res = await expensesApi.partialPay(splitId, paise);
+      if (res.data.fullyPaid) {
+        setPaid(true);
+      } else {
+        onPartialPay?.(paise);
+        setShowPartial(false);
+        setPartialAmount('');
+      }
+    } catch (err) {
+      setPartialError(err.response?.data?.error || 'Failed to record partial payment');
+    } finally {
+      setPartialLoading(false);
+    }
+  };
+
   // ── Already paid ─────────────────────────────────────────────────────────
   if (paid) {
     return (
@@ -287,10 +319,28 @@ export default function PaymentCard({
               <span className="font-medium">+ {formatRupees(carryForward)}</span>
             </div>
           )}
+          {hasPartial && (
+            <div className="flex justify-between text-green-600">
+              <span>Already paid</span>
+              <span className="font-medium">− {formatRupees(alreadyPaid)}</span>
+            </div>
+          )}
           <div className="flex justify-between font-bold text-gray-900 pt-1.5 border-t border-gray-200">
-            <span>Total to pay</span>
-            <span className="text-orange-600">{formatRupees(totalToPay)}</span>
+            <span>{hasPartial ? 'Remaining' : 'Total to pay'}</span>
+            <span className="text-orange-600">{formatRupees(hasPartial ? remaining : totalToPay)}</span>
           </div>
+          {hasPartial && (
+            <div className="mt-1">
+              <div className="flex justify-between text-xs text-gray-400 mb-1">
+                <span>Payment progress</span>
+                <span>{Math.round((alreadyPaid / totalToPay) * 100)}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                <div className="h-full rounded-full bg-green-500 transition-all"
+                  style={{ width: `${Math.min((alreadyPaid / totalToPay) * 100, 100)}%` }} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -469,28 +519,68 @@ export default function PaymentCard({
 
         {/* ── Done I Paid (manual fallback) + Pay Later ── */}
         {payState !== 'launched' && (
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={handleMarkPaid}
-              disabled={marking}
-              className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 active:scale-[0.98] disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-all"
-              aria-label="Mark as paid"
-            >
-              {marking
-                ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                : <><Check size={15} /> Done, I Paid</>}
-            </button>
-
-            {onPayLater && (
-              <button
-                onClick={() => onPayLater(splitId)}
-                className="flex items-center justify-center gap-1.5 border border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-[0.98] rounded-xl px-4 py-3 text-sm font-medium transition-all"
-                aria-label="Pay later"
-              >
-                <Clock size={14} />
-                Later
+          <div className="space-y-2 pt-1">
+            {/* Partial payment toggle */}
+            {!showPartial ? (
+              <button onClick={() => setShowPartial(true)}
+                className="w-full text-xs font-semibold py-2 rounded-xl border transition-colors"
+                style={{ borderColor: '#E5E5E3', color: '#6B7280', background: '#F7F7F5' }}>
+                Pay partial amount
               </button>
+            ) : (
+              <div className="rounded-xl border p-3 space-y-2" style={{ borderColor: '#E5E5E3', background: '#F7F7F5' }}>
+                <p className="text-xs font-semibold" style={{ color: '#1C1C1E' }}>
+                  Partial payment (remaining: {formatRupees(remaining)})
+                </p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: '#6B7280' }}>₹</span>
+                    <input type="number" value={partialAmount}
+                      onChange={(e) => setPartialAmount(e.target.value)}
+                      placeholder="0" min="1" step="0.01"
+                      className="w-full border rounded-xl pl-7 pr-3 py-2 text-sm focus:outline-none input-focus"
+                      style={{ borderColor: '#E5E5E3' }} />
+                  </div>
+                  <button onClick={handlePartialPay} disabled={partialLoading}
+                    className="px-3 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition-colors"
+                    style={{ background: '#27AE78' }}>
+                    {partialLoading
+                      ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full inline-block" />
+                      : 'Record'}
+                  </button>
+                  <button onClick={() => { setShowPartial(false); setPartialAmount(''); setPartialError(''); }}
+                    className="px-3 py-2 rounded-xl text-sm border transition-colors"
+                    style={{ borderColor: '#E5E5E3', color: '#6B7280' }}>
+                    ✕
+                  </button>
+                </div>
+                {partialError && <p className="text-xs" style={{ color: '#CC4A12' }}>{partialError}</p>}
+              </div>
             )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleMarkPaid}
+                disabled={marking}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 active:scale-[0.98] disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-all"
+                aria-label="Mark as paid"
+              >
+                {marking
+                  ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  : <><Check size={15} /> Done, I Paid</>}
+              </button>
+
+              {onPayLater && (
+                <button
+                  onClick={() => onPayLater(splitId)}
+                  className="flex items-center justify-center gap-1.5 border border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-[0.98] rounded-xl px-4 py-3 text-sm font-medium transition-all"
+                  aria-label="Pay later"
+                >
+                  <Clock size={14} />
+                  Later
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

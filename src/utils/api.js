@@ -47,6 +47,7 @@ export const authApi = {
   createRoom: (data) => api.post('/rooms', data),
   getRoom: (id) => api.get(`/rooms/${id}`),
   join: (data) => api.post('/auth/join', data),
+  login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
 };
@@ -56,6 +57,7 @@ export const membersApi = {
   list: () => api.get('/members'),
   add: (data) => api.post('/members', data),
   update: (id, data) => api.put(`/members/${id}`, data),
+  remove: (id) => api.delete(`/members/${id}/remove`),
 };
 
 // ── Expenses ──────────────────────────────────────────────────────────────
@@ -63,13 +65,20 @@ export const expensesApi = {
   add: (data) => api.post('/expenses', data),
   list: (params) => api.get('/expenses', { params }),
   get: (id) => api.get(`/expenses/${id}`),
+  edit: (id, data) => api.put(`/expenses/${id}`, data),
   markPaid: (splitId) => api.post(`/splits/${splitId}/pay`),
+  partialPay: (splitId, amount) => api.post(`/splits/${splitId}/partial-pay`, { amount }),
   recordAttempt: (splitId, upiApp, amount) =>
     api.post(`/splits/${splitId}/attempt`, { upiApp, amount }),
   getAttempts: (splitId) => api.get(`/splits/${splitId}/attempts`),
   deleteExpense: (expenseId) => api.delete(`/expenses/${expenseId}`),
   balances: () => api.get('/balances'),
   myPending: () => api.get('/my-pending'),
+  activity: (limit) => api.get('/activity', { params: { limit } }),
+  settlementPlan: () => api.get('/settlement-plan'),
+  payerConfirm: (splitId) => api.post(`/splits/${splitId}/payer-confirm`),
+  lockRoom: (lock) => api.post('/room/lock', { lock }),
+  sendReminder: (splitId) => api.post(`/splits/${splitId}/remind`),
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────

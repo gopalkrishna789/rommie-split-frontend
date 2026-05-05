@@ -146,7 +146,9 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'dismiss') return;
 
-  const urlToOpen = self.location.origin + '/';
+  // Navigate to home with pending bills open, or to specific expense
+  const notifData = event.notification.data || {};
+  const urlToOpen = self.location.origin + '/?pending=1';
 
   event.waitUntil(
     clients
@@ -154,6 +156,7 @@ self.addEventListener('notificationclick', (event) => {
       .then((windowClients) => {
         const existingWindow = windowClients.find((c) => c.url.startsWith(self.location.origin));
         if (existingWindow) {
+          existingWindow.postMessage({ type: 'OPEN_PENDING', data: notifData });
           return existingWindow.focus();
         }
         return clients.openWindow(urlToOpen);

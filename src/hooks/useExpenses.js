@@ -70,6 +70,13 @@ export function useExpenses() {
     });
   }, []);
 
+  const onExpenseUpdated = useCallback((data) => {
+    if (!data?.expenseId) return;
+    setExpenses((prev) =>
+      prev.map((e) => e.id === data.expenseId ? { ...e, ...data.expense } : e)
+    );
+  }, []);
+
   const onSplitPaid = useCallback((data) => {
     // Trigger balance refresh
     fetchBalances();
@@ -95,6 +102,7 @@ export function useExpenses() {
     markSplitPaid,
     removeExpense,
     onExpenseAdded,
+    onExpenseUpdated,
     onSplitPaid,
     onBalanceUpdated,
   };

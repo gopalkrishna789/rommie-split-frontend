@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, User, CreditCard, Palette, Camera, Mail } from 'lucide-react';
+import { Upload, User, CreditCard, Palette, Camera, Mail, Check, Image } from 'lucide-react';
 import MemberAvatar from './MemberAvatar';
 
 const COLORS = [
@@ -19,12 +19,15 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
   const [color, setColor] = useState(initialData.color || COLORS[0]);
   const [qrPreview, setQrPreview] = useState(initialData.qr_code_base64 || null);
   const [qrBase64, setQrBase64] = useState(initialData.qr_code_base64 || null);
+  const [photoPreview, setPhotoPreview] = useState(initialData.photo_base64 || null);
+  const [photoBase64, setPhotoBase64] = useState(initialData.photo_base64 || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef();
+  const photoRef = useRef();
 
   const initials = name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 3);
-  const previewMember = { name, color, avatar_initials: initials || '?' };
+  const previewMember = { name, color, avatar_initials: initials || '?', photo_base64: photoPreview };
 
   const handleQrUpload = (e) => {
     const file = e.target.files?.[0];
@@ -39,6 +42,15 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
       setQrBase64(ev.target.result);
       setError('');
     };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) { setError('Profile photo must be under 1MB'); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => { setPhotoPreview(ev.target.result); setPhotoBase64(ev.target.result); setError(''); };
     reader.readAsDataURL(file);
   };
 
@@ -58,6 +70,7 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
         email: email.trim() || undefined,
         color,
         qrCodeBase64: qrBase64,
+        photoBase64: photoBase64 || undefined,
       });
     } catch (err) {
       setError(err.message || err.response?.data?.error || 'Failed to save profile');
@@ -128,9 +141,45 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
           maxLength={200}
           className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
-        <p className="text-xs text-gray-400 mt-1">
-          📧 You'll get an email with a Pay Now button when someone adds an expense
+        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+          <Mail size={10} />
+          You'll get an email with a Pay Now button when someone adds an expense
         </p>
+      </div>
+
+      {/* Profile Photo */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Image size={14} className="inline mr-1" />
+          Profile Photo <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            <MemberAvatar member={previewMember} size="xl" />
+            <button type="button" onClick={() => photoRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white"
+              style={{ background: '#6366f1' }} aria-label="Upload photo">
+              <Camera size={13} className="text-white" />
+            </button>
+          </div>
+          <div className="flex-1">
+            {photoPreview ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-green-600 flex items-center gap-1"><Check size={12} /> Photo uploaded</span>
+                <button type="button" onClick={() => { setPhotoPreview(null); setPhotoBase64(null); }}
+                  className="text-xs text-red-500 hover:underline">Remove</button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => photoRef.current?.click()}
+                className="text-sm font-medium px-3 py-2 rounded-xl border-2 border-dashed transition-colors"
+                style={{ borderColor: '#E5E5E3', color: '#6B7280' }}>
+                Upload photo
+              </button>
+            )}
+            <p className="text-xs text-gray-400 mt-1">JPG, PNG up to 1MB</p>
+          </div>
+        </div>
+        <input ref={photoRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" aria-hidden="true" />
       </div>
 
       {/* Color picker */}
@@ -184,7 +233,9 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
                 alt="QR preview"
                 className="w-36 h-36 object-contain mx-auto rounded-xl border border-gray-200 bg-white p-1"
               />
-              <p className="text-xs text-green-600 font-medium">✓ QR uploaded</p>
+              <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                <Check size={12} /> QR uploaded
+              </p>
             </div>
           ) : (
             <div className="text-gray-500">
@@ -237,7 +288,8 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl py-3 font-semibold transition-colors"
+          className="flex-1 disabled:opacity-60 text-white rounded-xl py-3 font-semibold transition-colors"
+          style={{ background: '#27AE78' }}
         >
           {loading ? 'Saving...' : 'Save Profile'}
         </button>
