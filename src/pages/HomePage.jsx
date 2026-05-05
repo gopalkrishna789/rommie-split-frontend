@@ -6,6 +6,7 @@ import { DashboardSkeleton } from '../components/Dashboard';
 import AddExpense from '../components/AddExpense';
 import NotificationBell from '../components/NotificationBell';
 import PendingBillsModal from '../components/PendingBillsModal';
+import PendingConfirmations from '../components/PendingConfirmations';
 import ThemeToggle from '../components/ThemeToggle';
 import OnboardingTour from '../components/OnboardingTour';
 import { useExpenses } from '../hooks/useExpenses';
@@ -18,6 +19,8 @@ export default function HomePage() {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showPending, setShowPending]       = useState(false);
   const [pendingBills, setPendingBills]     = useState([]);
+  const [pendingConfirmations, setPendingConfirmations] = useState([]);
+  const [showConfirmations, setShowConfirmations] = useState(false);
   const [currentMember, setCurrentMember]  = useState(null);
   const [currentRoom, setCurrentRoom]      = useState(null);
   const [copied, setCopied]                = useState(false);
@@ -34,7 +37,10 @@ export default function HomePage() {
     setCurrentMember(member);
     setCurrentRoom(room);
     setMounted(true);
-    Promise.all([fetchMembers(), fetchExpenses(), fetchBalances()]).then(loadPendingBills);
+    Promise.all([fetchMembers(), fetchExpenses(), fetchBalances()]).then(() => {
+      loadPendingBills();
+      loadPendingConfirmations();
+    });
     // Show onboarding tour on first visit
     if (!localStorage.getItem('roomie_tour_done')) {
       setTimeout(() => setShowTour(true), 800);
@@ -56,7 +62,7 @@ export default function HomePage() {
       if (!rawSplits?.length) return;
       const bills = rawSplits.map((s) => ({
         expense: { id: s.expense_id, purpose: s.purpose, date: s.date, total_amount: s.total_amount, payer_id: s.payer_id, payer_name: s.payer_name, payer_color: s.payer_color, payer_initials: s.payer_initials },
-        split:   { id: s.id, share: s.share, carry_forward: s.carry_forward, paid: s.paid, member_id: s.member_id, expense_id: s.expense_id },
+        split:   { id: s.id, share: s.share, carry_forward: s.carry_forward, paid: s.paid, member_id: s.member_id, expense_id: s.expense_id, payment_status: s.payment_status },
         payer:   { id: s.payer_id, name: s.payer_name, upi_id: s.payer_upi_id, qr_code_base64: s.payer_qr, color: s.payer_color, avatar_initials: s.payer_initials },
       }));
       setPendingBills(bills);
@@ -64,19 +70,75 @@ export default function HomePage() {
     } catch (err) { console.error('Failed to load pending bills:', err); }
   }, []);
 
+  const loadPendingConfirmations = useCallback(async () => {
+    try {
+      const res = await expensesApi.myPending();
+      const rawSplits = res.data.splits;
+      if (!rawSplits?.length) return;
+      
+      // Filter splits where current user is the payer and payment_status is 'pending_verification'
+      const confirmations = rawSplits
+        .filter((s) => s.payer_id === currentMember?.id && s.payment_status === 'pending_verification')
+        .map((s) => ({
+          expense: { id: s.expense_id, purpose: s.purpose, date: s.date, total_amount: s.total_amount },
+          split:   { id: s.id, share: s.share, carry_forward: s.carry_forward, payment_status: s.payment_status, member_id: s.member_id },
+          debtor:  { id: s.member_id, name: s.member_name, color: s.member_color, avatar_initials: s.member_initials },
+        }));
+      
+      setPendingConfirmations(confirmations);
+    } catch (err) { console.error('Failed to load pending confirmations:', err); }
+  }, [currentMember]);
+
   const { emit, connected } = useSocket(currentRoom?.id, {
-    onExpenseAdded:   (data) => { onExpenseAdded(data); fetchBalances(); loadPendingBills(); },
+    onExpenseAdded:   (data) => { onExpenseAdded(data); fetchBalances(); loadPendingBills(); loadPendingConfirmations(); },
     onExpenseUpdated: (data) => { onExpenseUpdated(data); },
-    onSplitPaid:      (data) => { onSplitPaid(data); fetchBalances(); },
+    onSplitPaid:      (data) => { onSplitPaid(data); fetchBalances(); loadPendingBills(); loadPendingConfirmations(); },
     onBalanceUpdated,
     onExpenseDeleted: (data) => { removeExpense(data.expenseId); fetchBalances(); },
+    onPaymentPendingVerification: (data) => { 
+      loadPendingBills(); 
+      loadPendingConfirmations();
+      // Show notification badge for payer
+      if (data.payerId === currentMember?.id) {
+        setShowConfirmations(true);
+      }
+    },
+    onPaymentRejected: (data) => {
+      loadPendingBills();
+      loadPendingConfirmations();
+    },
   });
 
-  const handleAddExpense = async (data) => { await addExpense(data); fetchBalances(); loadPendingBills(); };
+  const handleAddExpense = async (data) => { await addExpense(data); fetchBalances(); loadPendingBills(); loadPendingConfirmations(); };
   const handleMarkPaid   = async (splitId) => {
-    await markSplitPaid(splitId);
-    fetchBalances();
-    setPendingBills((prev) => prev.filter((b) => b.split.id !== splitId));
+    const response = await markSplitPaid(splitId);
+    
+    // If payment is pending verification, don't remove from pending bills yet
+    if (response?.data?.status !== 'pending_verification') {
+      fetchBalances();
+      setPendingBills((prev) => prev.filter((b) => b.split.id !== splitId));
+    } else {
+      // Reload to show updated status
+      loadPendingBills();
+      loadPendingConfirmations();
+    }
+    
+    return response;
+  };
+
+  const handleConfirmPayment = async (splitId, approve) => {
+    try {
+      await expensesApi.payerVerify(splitId, approve);
+      loadPendingBills();
+      loadPendingConfirmations();
+      fetchBalances();
+      
+      // Remove from confirmations list
+      setPendingConfirmations((prev) => prev.filter((c) => c.split.id !== splitId));
+    } catch (err) {
+      console.error('Failed to confirm/reject payment:', err);
+      alert(err.response?.data?.error || 'Failed to process confirmation');
+    }
   };
   const handleLogout = async () => {
     await authApi.logout().catch(() => {});
@@ -94,6 +156,7 @@ export default function HomePage() {
   if (!currentMember) return null;
 
   const pendingCount = pendingBills.length;
+  const confirmationsCount = pendingConfirmations.length;
   const code = currentRoom?.invite_code || currentRoom?.inviteCode;
 
   return (
@@ -143,6 +206,16 @@ export default function HomePage() {
                 {pendingCount} due
               </button>
             )}
+            {confirmationsCount > 0 && (
+              <button
+                onClick={() => setShowConfirmations(true)}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-heading font-semibold transition-all animate-fade-in"
+                style={{ background: '#FFF4E6', color: '#D97706', border: '1px solid #FCD34D' }}
+              >
+                <Bell size={12} strokeWidth={2.5} />
+                {confirmationsCount}
+              </button>
+            )}
             <ThemeToggle />
             <NotificationBell />
             <button onClick={handleLogout}
@@ -177,7 +250,21 @@ export default function HomePage() {
         <AddExpense members={members} onAdd={handleAddExpense} onClose={() => setShowAddExpense(false)} />
       )}
       {showPending && (
-        <PendingBillsModal pendingBills={pendingBills} currentMember={currentMember} onMarkPaid={handleMarkPaid} onClose={() => setShowPending(false)} />
+        <PendingBillsModal 
+          pendingBills={pendingBills} 
+          currentMember={currentMember} 
+          onMarkPaid={handleMarkPaid} 
+          onConfirmPayment={handleConfirmPayment}
+          onClose={() => setShowPending(false)} 
+        />
+      )}
+      {showConfirmations && (
+        <PendingConfirmations
+          pendingConfirmations={pendingConfirmations}
+          onConfirm={(splitId) => handleConfirmPayment(splitId, true)}
+          onReject={(splitId) => handleConfirmPayment(splitId, false)}
+          onClose={() => setShowConfirmations(false)}
+        />
       )}
       {showTour && (
         <OnboardingTour onDone={() => {

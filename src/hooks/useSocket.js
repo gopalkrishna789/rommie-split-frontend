@@ -76,6 +76,14 @@ export function useSocket(roomId, handlers = {}) {
       handlersRef.current.onMemberRemoved?.(data);
     };
 
+    const onPaymentPendingVerification = (data) => {
+      handlersRef.current.onPaymentPendingVerification?.(data);
+    };
+
+    const onPaymentRejected = (data) => {
+      handlersRef.current.onPaymentRejected?.(data);
+    };
+
     socket.on('connect',          onConnect);
     socket.on('disconnect',       onDisconnect);
     socket.on('reconnect',        onReconnect);
@@ -85,6 +93,8 @@ export function useSocket(roomId, handlers = {}) {
     socket.on('balance:updated',  onBalanceUpdated);
     socket.on('expense:deleted',  onExpenseDeleted);
     socket.on('member:removed',   onMemberRemoved);
+    socket.on('payment:pending_verification', onPaymentPendingVerification);
+    socket.on('payment:rejected', onPaymentRejected);
 
     // If already connected, join room immediately
     if (socket.connected) {
@@ -102,6 +112,8 @@ export function useSocket(roomId, handlers = {}) {
       socket.off('balance:updated', onBalanceUpdated);
       socket.off('expense:deleted', onExpenseDeleted);
       socket.off('member:removed',  onMemberRemoved);
+      socket.off('payment:pending_verification', onPaymentPendingVerification);
+      socket.off('payment:rejected', onPaymentRejected);
       socket.emit('leave:room', { roomId });
     };
   }, [roomId]);

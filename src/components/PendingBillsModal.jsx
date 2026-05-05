@@ -27,7 +27,7 @@ function saveDismissed(set) {
   } catch {}
 }
 
-export default function PendingBillsModal({ pendingBills, currentMember, onMarkPaid, onClose }) {
+export default function PendingBillsModal({ pendingBills, currentMember, onMarkPaid, onConfirmPayment, onClose }) {
   const [dismissed, setDismissed] = useState(() => loadDismissed());
   const [paidIds, setPaidIds]     = useState(new Set());
 
@@ -111,8 +111,11 @@ export default function PendingBillsModal({ pendingBills, currentMember, onMarkP
                 carryForward={split.carry_forward}
                 splitId={split.id}
                 amountPaid={split.amount_paid || 0}
+                paymentStatus={split.payment_status || 'unpaid'}
+                isPayerView={currentMember.id === payer.id}
                 onMarkPaid={handleMarkPaid}
                 onPayLater={(id) => handleDismiss(id)}
+                onConfirmPayment={onConfirmPayment}
                 isPaid={false}
                 compact={false}
               />
