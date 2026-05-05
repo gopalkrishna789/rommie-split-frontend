@@ -35,6 +35,9 @@ export default function PaymentCard({
   compact = false,
   amountPaid = 0,       // already paid amount (for partial payment display)
   onPartialPay,         // optional: called with amount when partial payment submitted
+  paymentStatus = 'unpaid', // NEW: 'unpaid', 'pending_verification', 'paid'
+  onConfirmPayment,     // NEW: callback for payer to confirm/reject
+  isPayerView = false,  // NEW: true if current user is the payer
 }) {
   const [copied, setCopied]           = useState(false);
   const [copiedLink, setCopiedLink]   = useState(false);
@@ -152,9 +155,17 @@ export default function PaymentCard({
     if (marking) return;
     setMarking(true);
     try {
-      await onMarkPaid(splitId);
-      setPaid(true);
-      setPayState('idle');
+      const response = await onMarkPaid(splitId);
+      
+      // Check if payment is pending verification
+      if (response?.data?.status === 'pending_verification') {
+        // Show pending state - don't mark as fully paid yet
+        setPayState('pending_verification');
+      } else {
+        // Old behavior for backward compatibility
+        setPaid(true);
+        setPayState('idle');
+      }
     } catch (err) {
       console.error('Mark paid failed:', err);
       setPayState('idle');
@@ -208,7 +219,7 @@ export default function PaymentCard({
   };
 
   // ── Already paid ─────────────────────────────────────────────────────────
-  if (paid) {
+  if (isPaid || paymentStatus === 'paid') {
     return (
       <div className="rounded-2xl border border-green-200 bg-green-50 p-4 flex items-center gap-3">
         <CheckCircle2 className="text-green-500 flex-shrink-0" size={22} />
@@ -216,6 +227,85 @@ export default function PaymentCard({
           <p className="font-semibold text-green-800 text-sm">Paid to {payer.name}</p>
           <p className="text-xs text-green-600 truncate">
             {expense.purpose} · {formatRupees(totalToPay)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Pending Verification (Debtor View) ──────────────────────────────────
+  if (paymentStatus === 'pending_verification' && !isPayerView) {
+    return (
+      <div className="rounded-2xl border-2 border-yellow-300 bg-yellow-50 overflow-hidden shadow-sm">
+        {/* Header */}
+        <div className="flex items-center gap-3 p-4 bg-yellow-100 border-b border-yellow-200">
+          <Clock className="text-yellow-600 flex-shrink-0" size={22} />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-yellow-900 text-sm">Waiting for Confirmation</p>
+            <p className="text-xs text-yellow-700 truncate">
+              {payer.name} needs to confirm they received your payment
+            </p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Amount</span>
+            <span className="text-lg font-bold text-yellow-700">{formatRupees(totalToPay)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">For</span>
+            <span className="text-sm font-medium text-gray-900 truncate ml-2">{expense.purpose}</span>
+          </div>
+          <div className="rounded-xl bg-yellow-100 border border-yellow-200 p-3 text-center">
+            <p className="text-xs text-yellow-800">
+              ⏳ Your payment is pending verification. {payer.name} will confirm once they receive it.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Pending Verification (Payer View - Needs Confirmation) ──────────────
+  if (paymentStatus === 'pending_verification' && isPayerView) {
+    return (
+      <div className="rounded-2xl border-2 border-orange-300 bg-white overflow-hidden shadow-md">
+        {/* Header */}
+        <div className="bg-orange-500 px-4 py-3 flex items-center gap-2">
+          <AlertCircle className="text-white flex-shrink-0" size={20} />
+          <p className="text-white font-bold text-sm">Payment Confirmation Needed</p>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="text-center space-y-1">
+            <p className="font-bold text-gray-900 text-base">
+              Did you receive this payment?
+            </p>
+            <p className="text-sm text-gray-600">
+              {expense.purpose} · {formatRupees(totalToPay)}
+            </p>
+          </div>
+
+          {/* Confirmation buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => onConfirmPayment && onConfirmPayment(splitId, false)}
+              className="flex-1 py-3 rounded-xl border-2 border-red-200 bg-red-50 text-red-700 font-semibold text-sm hover:bg-red-100 active:scale-[0.98] transition-all"
+            >
+              ✗ No, I didn't
+            </button>
+            <button
+              onClick={() => onConfirmPayment && onConfirmPayment(splitId, true)}
+              className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <Check size={16} /> Yes, Received!
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-400 text-center">
+            Only confirm if you actually received {formatRupees(totalToPay)} from the member
           </p>
         </div>
       </div>
@@ -272,6 +362,28 @@ export default function PaymentCard({
 
           <p className="text-xs text-gray-400 text-center">
             Only confirm if the payment was successful in {appLabel}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Payment marked as pending verification ──────────────────────────────
+  if (payState === 'pending_verification') {
+    return (
+      <div className="rounded-2xl border-2 border-yellow-300 bg-yellow-50 overflow-hidden shadow-sm">
+        <div className="flex items-center gap-3 p-4 bg-yellow-100 border-b border-yellow-200">
+          <Clock className="text-yellow-600 flex-shrink-0" size={22} />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-yellow-900 text-sm">Payment Submitted!</p>
+            <p className="text-xs text-yellow-700">
+              Waiting for {payer.name} to confirm
+            </p>
+          </div>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-yellow-800 text-center">
+            ⏳ {payer.name} will confirm once they receive your payment. You'll be notified when it's approved.
           </p>
         </div>
       </div>

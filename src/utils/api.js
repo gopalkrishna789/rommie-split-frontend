@@ -77,6 +77,7 @@ export const expensesApi = {
   activity: (limit) => api.get('/activity', { params: { limit } }),
   settlementPlan: () => api.get('/settlement-plan'),
   payerConfirm: (splitId) => api.post(`/splits/${splitId}/payer-confirm`),
+  payerVerify: (splitId, approve) => api.post(`/splits/${splitId}/payer-verify`, { approve }),
   lockRoom: (lock) => api.post('/room/lock', { lock }),
   sendReminder: (splitId) => api.post(`/splits/${splitId}/remind`),
 };
