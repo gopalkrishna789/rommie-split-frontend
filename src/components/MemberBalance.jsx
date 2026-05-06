@@ -14,7 +14,7 @@ export default function MemberBalance({ member, balance, isCurrentUser = false, 
       className="w-full flex items-center gap-3 p-4 rounded-2xl border transition-all text-left card-hover"
       style={{
         background: isCurrentUser ? '#F7FFF9' : '#FFFFFF',
-        borderColor: isCurrentUser ? '#A8E6C8' : '#E5E5E3',
+        borderColor: isCurrentUser ? '#C7D2FE' : '#E5E5E3',
         boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
       }}
       aria-label={`${member.name} balance`}
@@ -26,7 +26,7 @@ export default function MemberBalance({ member, balance, isCurrentUser = false, 
           <p className="font-heading font-semibold truncate" style={{ color: '#1C1C1E' }}>{member.name}</p>
           {isCurrentUser && (
             <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-              style={{ background: '#D4F5E7', color: '#1A6B4A' }}>
+              style={{ background: '#EEF2FF', color: '#4F46E5' }}>
               You
             </span>
           )}
@@ -39,7 +39,7 @@ export default function MemberBalance({ member, balance, isCurrentUser = false, 
       <div className="flex flex-col items-end gap-0.5 mr-1">
         <div className="flex items-center gap-1 font-heading font-semibold text-sm tabular-nums"
           style={{
-            color: isPositive ? '#1A6B4A' : isNegative ? '#CC4A12' : '#9CA3AF',
+            color: isPositive ? '#4F46E5' : isNegative ? '#CC4A12' : '#9CA3AF',
           }}>
           {isPositive && <TrendingUp size={13} strokeWidth={2} />}
           {isNegative && <TrendingDown size={13} strokeWidth={2} />}
@@ -54,7 +54,7 @@ export default function MemberBalance({ member, balance, isCurrentUser = false, 
           <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
             style={
               isPositive
-                ? { background: '#D4F5E7', color: '#1A6B4A' }
+                ? { background: '#EEF2FF', color: '#4F46E5' }
                 : { background: '#FFEEE6', color: '#CC4A12' }
             }>
             {isPositive ? 'owed to you' : 'you owe'}

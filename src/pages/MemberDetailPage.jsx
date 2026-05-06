@@ -133,7 +133,7 @@ export default function MemberDetailPage() {
                   {!editingEmail && (
                     <button onClick={() => { setEditingEmail(true); setEmailMsg(''); }}
                       className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors"
-                      style={{ color: '#27AE78', background: '#D4F5E7' }}>
+                      style={{ color: '#6366F1', background: '#EEF2FF' }}>
                       <Pencil size={11} strokeWidth={2} />
                       {viewedMember.email ? 'Edit' : 'Add Email'}
                     </button>
@@ -167,7 +167,7 @@ export default function MemberDetailPage() {
                       />
                       <button onClick={handleSaveEmail} disabled={emailSaving}
                         className="flex items-center gap-1 px-3 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition-colors"
-                        style={{ background: '#27AE78' }}>
+                        style={{ background: '#6366F1' }}>
                         {emailSaving
                           ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                           : <><Check size={14} /> Save</>}
@@ -179,7 +179,7 @@ export default function MemberDetailPage() {
                       </button>
                     </div>
                     {emailMsg && (
-                      <p className="text-xs font-medium" style={{ color: emailMsg.includes('updated') ? '#27AE78' : '#CC4A12' }}>
+                      <p className="text-xs font-medium" style={{ color: emailMsg.includes('updated') ? '#6366F1' : '#CC4A12' }}>
                         {emailMsg}
                       </p>
                     )}
@@ -187,7 +187,7 @@ export default function MemberDetailPage() {
                 )}
 
                 {emailMsg && !editingEmail && (
-                  <p className="text-xs font-medium mt-2" style={{ color: '#27AE78' }}>{emailMsg}</p>
+                  <p className="text-xs font-medium mt-2" style={{ color: '#6366F1' }}>{emailMsg}</p>
                 )}
               </div>
             )}
@@ -207,15 +207,15 @@ export default function MemberDetailPage() {
               </p>
               <p className="text-xs mt-0.5" style={{ color: '#FF6B35' }}>to others</p>
             </div>
-            <div className="rounded-2xl p-4" style={{ background: '#D4F5E7', border: '1px solid #A8E6C8' }}>
+            <div className="rounded-2xl p-4" style={{ background: '#EEF2FF', border: '1px solid #C7D2FE' }}>
               <div className="flex items-center gap-1.5 mb-1">
-                <TrendingUp size={14} style={{ color: '#27AE78' }} strokeWidth={2} />
-                <span className="text-xs font-semibold" style={{ color: '#1A6B4A' }}>Owed</span>
+                <TrendingUp size={14} style={{ color: '#6366F1' }} strokeWidth={2} />
+                <span className="text-xs font-semibold" style={{ color: '#4F46E5' }}>Owed</span>
               </div>
-              <p className="font-heading font-bold text-lg tabular-nums" style={{ color: '#1A6B4A' }}>
+              <p className="font-heading font-bold text-lg tabular-nums" style={{ color: '#4F46E5' }}>
                 {formatRupees(balance.totalOwedTo)}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: '#27AE78' }}>by others</p>
+              <p className="text-xs mt-0.5" style={{ color: '#6366F1' }}>by others</p>
             </div>
           </div>
         )}
@@ -229,14 +229,14 @@ export default function MemberDetailPage() {
             {loading ? (
               <div className="flex justify-center py-8">
                 <span className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full"
-                  style={{ borderColor: '#27AE78', borderTopColor: 'transparent' }} />
+                  style={{ borderColor: '#6366F1', borderTopColor: 'transparent' }} />
               </div>
             ) : unpaidSplits.length === 0 ? (
               <div className="text-center py-10 rounded-2xl border"
                 style={{ background: '#FFFFFF', borderColor: '#E5E5E3' }}>
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: '#D4F5E7' }}>
-                  <TrendingUp size={22} style={{ color: '#27AE78' }} strokeWidth={1.75} />
+                  style={{ background: '#EEF2FF' }}>
+                  <TrendingUp size={22} style={{ color: '#6366F1' }} strokeWidth={1.75} />
                 </div>
                 <p className="font-heading font-semibold" style={{ color: '#1C1C1E' }}>All settled up!</p>
                 <p className="text-sm mt-1" style={{ color: '#6B7280' }}>No pending payments</p>

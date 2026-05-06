@@ -121,7 +121,7 @@ export default function PendingConfirmations({ pendingConfirmations, onConfirm, 
                     <button
                       onClick={() => handleConfirm(item.split.id)}
                       disabled={processing === item.split.id}
-                      className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                     >
                       {processing === item.split.id ? (
                         <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />

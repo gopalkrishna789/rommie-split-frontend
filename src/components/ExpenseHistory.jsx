@@ -133,7 +133,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
             style={{
               background: '#FFFFFF',
               boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-              border: `1px solid ${fullySettled ? '#A8E6C8' : iHaveUnpaid ? '#FFCDB4' : '#E5E5E3'}`,
+              border: `1px solid ${fullySettled ? '#C7D2FE' : iHaveUnpaid ? '#FFCDB4' : '#E5E5E3'}`,
             }}>
 
             {/* Row */}
@@ -178,8 +178,8 @@ const handleMarkPaid = async (splitId, expenseId) => {
             {/* Settled bar */}
             {fullySettled && !isConfirmingDelete && (
               <div className="flex items-center justify-between px-4 py-2 border-t"
-                style={{ background: '#F7FFF9', borderColor: '#A8E6C8' }}>
-                <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: '#1A6B4A' }}>
+                style={{ background: '#F7FFF9', borderColor: '#C7D2FE' }}>
+                <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: '#4F46E5' }}>
                   <CheckCircle2 size={13} strokeWidth={2} /> Everyone has paid
                 </p>
                 <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(expense.id); }}
@@ -220,7 +220,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
                 {loadingSplits[expense.id] ? (
                   <div className="flex justify-center py-4">
                     <span className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full"
-                      style={{ borderColor: '#27AE78', borderTopColor: 'transparent' }} />
+                      style={{ borderColor: '#6366F1', borderTopColor: 'transparent' }} />
                   </div>
                 ) : splits.length === 0 ? (
                   <p className="text-sm text-center py-2" style={{ color: '#9CA3AF' }}>No splits data</p>
@@ -256,7 +256,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
                             {formatRupees(split.share + split.carry_forward)}
                           </span>
                           <button onClick={() => setPayLaterIds((p) => { const n = new Set(p); n.delete(split.id); return n; })}
-                            className="text-xs font-semibold" style={{ color: '#27AE78' }}>
+                            className="text-xs font-semibold" style={{ color: '#6366F1' }}>
                             Pay now
                           </button>
                         </div>
@@ -284,7 +284,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
                                 <span>{Math.round((split.amount_paid / (split.share + split.carry_forward)) * 100)}%</span>
                               </div>
                               <div className="h-1 rounded-full bg-gray-200 overflow-hidden">
-                                <div className="h-full rounded-full bg-green-400"
+                                <div className="h-full rounded-full bg-indigo-400"
                                   style={{ width: `${Math.min((split.amount_paid / (split.share + split.carry_forward)) * 100, 100)}%` }} />
                               </div>
                             </div>
@@ -297,7 +297,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
                             </p>
                           )}
                           {remindMsg[split.id] && (
-                            <p className="text-xs mt-0.5 font-medium" style={{ color: remindMsg[split.id].includes('sent') ? '#27AE78' : '#CC4A12' }}>
+                            <p className="text-xs mt-0.5 font-medium" style={{ color: remindMsg[split.id].includes('sent') ? '#6366F1' : '#CC4A12' }}>
                               {remindMsg[split.id]}
                             </p>
                           )}
@@ -310,7 +310,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
                             <button
                               onClick={() => handlePayerConfirm(split.id, expense.id)}
                               className="text-xs font-semibold px-2 py-1 rounded-lg transition-colors"
-                              style={{ background: '#D4F5E7', color: '#1A6B4A' }}
+                              style={{ background: '#EEF2FF', color: '#4F46E5' }}
                               title="Mark as received (cash/outside payment)">
                               ✓ Received
                             </button>
@@ -328,7 +328,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
                         )}
                         <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
                           style={split.paid
-                            ? { background: '#D4F5E7', color: '#1A6B4A' }
+                            ? { background: '#EEF2FF', color: '#4F46E5' }
                             : split.amount_paid > 0
                             ? { background: '#FFF8E0', color: '#996B00' }
                             : { background: '#FFF8E0', color: '#996B00' }}>
@@ -347,7 +347,7 @@ const handleMarkPaid = async (splitId, expenseId) => {
       {pagination?.hasMore && (
         <button onClick={onLoadMore} disabled={loading}
           className="w-full py-3 text-sm font-semibold rounded-2xl border transition-colors disabled:opacity-60"
-          style={{ borderColor: '#A8E6C8', color: '#27AE78', background: '#FFFFFF' }}>
+          style={{ borderColor: '#C7D2FE', color: '#6366F1', background: '#FFFFFF' }}>
           {loading ? 'Loading…' : 'Load more expenses'}
         </button>
       )}

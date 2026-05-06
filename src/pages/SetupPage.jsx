@@ -89,7 +89,7 @@ export default function SetupPage() {
                 s.id === step
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
                   : i < currentStepIdx
-                  ? 'bg-green-100 text-green-700'
+                  ? 'bg-indigo-100 text-indigo-700'
                   : 'bg-white/70 text-gray-400 border border-gray-200'
               }`}>
                 {i < currentStepIdx
@@ -98,7 +98,7 @@ export default function SetupPage() {
                 {s.label}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-5 h-px ${i < currentStepIdx ? 'bg-green-300' : 'bg-gray-200'}`} />
+                <div className={`w-5 h-px ${i < currentStepIdx ? 'bg-indigo-300' : 'bg-gray-200'}`} />
               )}
             </div>
           ))}
@@ -114,7 +114,7 @@ export default function SetupPage() {
             <div className="relative inline-block mb-4">
               <div className="absolute inset-0 rounded-2xl bg-indigo-400 blur-xl opacity-25 scale-110" />
               <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
-                style={{ background: 'linear-gradient(135deg, #1A6B4A, #27AE78)' }}>
+                style={{ background: 'linear-gradient(135deg, #667EEA, #764BA2)' }}>
                 <Home size={30} className="text-white" strokeWidth={1.5} />
               </div>
             </div>
@@ -143,7 +143,7 @@ export default function SetupPage() {
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Mail size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
                       id="setup-email"
                       type="email"
@@ -151,7 +151,7 @@ export default function SetupPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@gmail.com"
                       autoFocus
-                      className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
+                      className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl pl-14 pr-4 py-3 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
@@ -166,14 +166,14 @@ export default function SetupPage() {
                     Password
                   </label>
                   <div className="relative">
-                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Lock size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
                       id="setup-pass"
                       type={showPass ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Min. 6 characters"
-                      className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl pl-10 pr-11 py-3 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
+                      className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl pl-14 pr-11 py-3 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
                     />
                     <button
                       type="button"
@@ -191,23 +191,23 @@ export default function SetupPage() {
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Lock size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
                       id="setup-confirm"
                       type={showPass ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter password"
-                      className={`w-full border-2 bg-gray-50 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:bg-white transition-all ${
+                      className={`w-full border-2 bg-gray-50 rounded-xl pl-14 pr-4 py-3 text-sm focus:outline-none focus:bg-white transition-all ${
                         confirmPassword && confirmPassword !== password
                           ? 'border-red-300 focus:border-red-400'
                           : confirmPassword && confirmPassword === password
-                          ? 'border-green-300 focus:border-green-400'
+                          ? 'border-indigo-300 focus:border-indigo-400'
                           : 'border-gray-100 focus:border-indigo-400'
                       }`}
                     />
                     {confirmPassword && confirmPassword === password && (
-                      <CheckCircle2 size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-green-500" />
+                      <CheckCircle2 size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-indigo-500" />
                     )}
                   </div>
                 </div>
@@ -224,7 +224,7 @@ export default function SetupPage() {
                 <button
                   type="submit"
                   className="w-full flex items-center justify-center gap-2 text-white rounded-xl py-3.5 font-heading font-semibold text-sm transition-all active:scale-[0.98]"
-                  style={{ background: '#27AE78', boxShadow: '0 4px 14px rgba(39,174,120,0.30)' }}
+                  style={{ background: '#6366F1', boxShadow: '0 4px 14px rgba(99,102,241,0.30)' }}
                 >
                   Continue to Profile
                   <ArrowRight size={16} />

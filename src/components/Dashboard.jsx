@@ -40,7 +40,7 @@ export function DashboardSkeleton() {
 
 // ── Category icon map ─────────────────────────────────────────────────────
 const CAT = {
-  groceries:     { Icon: ShoppingCart,    color: '#27AE78' },
+  groceries:     { Icon: ShoppingCart,    color: '#6366F1' },
   electricity:   { Icon: Zap,             color: '#F7C948' },
   water:         { Icon: Droplets,        color: '#3b82f6' },
   wifi:          { Icon: Wifi,            color: '#6366f1' },
@@ -124,20 +124,20 @@ export default function Dashboard({
       {/* ── Hero balance card ── */}
       <div
         className={`relative overflow-hidden rounded-2xl p-5 text-white ${visible ? 'animate-fade-in-up' : 'opacity-0'}`}
-        style={{ background: 'linear-gradient(135deg, #1A6B4A 0%, #27AE78 100%)', boxShadow: '0 8px 32px rgba(39,174,120,0.28)' }}
+        style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)', boxShadow: '0 8px 32px rgba(99,102,241,0.28)' }}
       >
         {/* Decorative circles */}
         <div className="absolute -top-10 -right-10 w-36 h-36 bg-white/10 rounded-full" />
         <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full" />
 
         <div className="relative">
-          <p className="text-green-200 text-xs font-semibold uppercase tracking-widest mb-2">
+          <p className="text-indigo-200 text-xs font-semibold uppercase tracking-widest mb-2">
             Your Balance
           </p>
           <p className="text-4xl font-heading font-bold mb-1 tabular-nums animate-count-up">
             {netBalance >= 0 ? '+' : ''}{formatRupees(Math.abs(netBalance))}
           </p>
-          <div className="flex items-center gap-1.5 text-green-100 text-sm mb-5">
+          <div className="flex items-center gap-1.5 text-indigo-100 text-sm mb-5">
             {netBalance > 0
               ? <><TrendingUp size={14} strokeWidth={2} /> Others owe you</>
               : netBalance < 0
@@ -148,17 +148,17 @@ export default function Dashboard({
           {/* Stats row */}
           <div className="flex gap-4 pt-4 border-t border-white/20">
             <div>
-              <p className="text-green-200 text-xs">You owe</p>
+              <p className="text-indigo-200 text-xs">You owe</p>
               <p className="text-white font-heading font-semibold text-sm tabular-nums">{formatRupees(youOwe)}</p>
             </div>
             <div className="w-px bg-white/20" />
             <div>
-              <p className="text-green-200 text-xs">Owed to you</p>
+              <p className="text-indigo-200 text-xs">Owed to you</p>
               <p className="text-white font-heading font-semibold text-sm tabular-nums">{formatRupees(youreOwed)}</p>
             </div>
             <div className="w-px bg-white/20" />
             <div>
-              <p className="text-green-200 text-xs">This month</p>
+              <p className="text-indigo-200 text-xs">This month</p>
               <p className="text-white font-heading font-semibold text-sm tabular-nums">{formatRupees(monthlyTotal)}</p>
             </div>
           </div>
@@ -168,8 +168,8 @@ export default function Dashboard({
         {(youOwe > 0 || pendingCount > 0) && (
           <button
             onClick={onShowPending}
-            className="mt-4 flex items-center gap-2 bg-white rounded-full px-5 py-2 text-sm font-heading font-semibold transition-all active:scale-95 hover:bg-green-50"
-            style={{ color: '#1A6B4A' }}
+            className="mt-4 flex items-center gap-2 bg-white rounded-full px-5 py-2 text-sm font-heading font-semibold transition-all active:scale-95 hover:bg-indigo-50"
+            style={{ color: '#4F46E5' }}
           >
             <CheckCircle2 size={15} strokeWidth={2} />
             Settle up
@@ -182,7 +182,7 @@ export default function Dashboard({
         <button
           onClick={onAddExpense}
           className="flex items-center justify-center gap-2 text-white rounded-xl py-3.5 font-heading font-semibold text-sm transition-all active:scale-[0.97]"
-          style={{ background: '#27AE78', boxShadow: '0 4px 14px rgba(39,174,120,0.30)' }}
+          style={{ background: '#6366F1', boxShadow: '0 4px 14px rgba(99,102,241,0.30)' }}
         >
           <Plus size={17} strokeWidth={2.5} />
           Add Expense
@@ -205,7 +205,7 @@ export default function Dashboard({
             <button
               onClick={() => navigate('/members')}
               className="flex items-center gap-1 text-xs font-semibold transition-colors"
-              style={{ color: '#27AE78' }}
+              style={{ color: '#6366F1' }}
             >
               See all <ChevronRight size={13} />
             </button>
@@ -226,7 +226,7 @@ export default function Dashboard({
                     <MemberAvatar member={member} size="lg" />
                     {isMe && (
                       <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center"
-                        style={{ background: '#27AE78' }}>
+                        style={{ background: '#6366F1' }}>
                         <CheckCircle2 size={8} className="text-white" strokeWidth={3} />
                       </div>
                     )}
@@ -239,7 +239,7 @@ export default function Dashboard({
                       className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums"
                       style={
                         net > 0
-                          ? { background: '#D4F5E7', color: '#1A6B4A' }
+                          ? { background: '#EEF2FF', color: '#4F46E5' }
                           : net < 0
                           ? { background: '#FFEEE6', color: '#CC4A12' }
                           : { background: '#F3F4F6', color: '#6B7280' }
@@ -281,7 +281,7 @@ export default function Dashboard({
             <button
               onClick={() => navigate('/history')}
               className="flex items-center gap-1 text-xs font-semibold"
-              style={{ color: '#27AE78' }}
+              style={{ color: '#6366F1' }}
             >
               See all <ChevronRight size={13} />
             </button>
@@ -309,7 +309,7 @@ export default function Dashboard({
             <button
               onClick={onAddExpense}
               className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
-              style={{ background: '#D4F5E7', color: '#1A6B4A' }}
+              style={{ background: '#EEF2FF', color: '#4F46E5' }}
             >
               <Plus size={15} /> Add first expense
             </button>
@@ -350,7 +350,7 @@ export default function Dashboard({
                     </p>
                     {isMyExpense ? (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: '#D4F5E7', color: '#1A6B4A' }}>
+                        style={{ background: '#EEF2FF', color: '#4F46E5' }}>
                         You paid
                       </span>
                     ) : (
@@ -392,11 +392,11 @@ function SpendingBreakdown({ expenses, visible }) {
     <div className={`${visible ? 'animate-fade-in-up delay-400' : 'opacity-0'}`}>
       <div className="flex items-center justify-between mb-3">
         <p className="font-heading font-semibold text-sm flex items-center gap-1.5" style={{ color: '#1C1C1E' }}>
-          <TrendingUp size={14} style={{ color: '#27AE78' }} />
+          <TrendingUp size={14} style={{ color: '#6366F1' }} />
           This Month
         </p>
         <button onClick={() => navigate('/history')}
-          className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#27AE78' }}>
+          className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#6366F1' }}>
           Details <ChevronRight size={13} />
         </button>
       </div>

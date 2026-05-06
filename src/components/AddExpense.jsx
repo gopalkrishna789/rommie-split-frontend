@@ -9,7 +9,7 @@ import { rupeesToPaise, formatRupees } from '../utils/upiLink';
 import MemberAvatar from './MemberAvatar';
 
 const CATEGORIES = [
-  { id: 'groceries',     label: 'Groceries',    Icon: ShoppingCart,    color: '#27AE78' },
+  { id: 'groceries',     label: 'Groceries',    Icon: ShoppingCart,    color: '#6366F1' },
   { id: 'electricity',   label: 'Electricity',  Icon: Zap,             color: '#F7C948' },
   { id: 'water',         label: 'Water',        Icon: Droplets,        color: '#3b82f6' },
   { id: 'wifi',          label: 'WiFi',         Icon: Wifi,            color: '#6366f1' },
@@ -127,8 +127,8 @@ export default function AddExpense({ members, onAdd, onClose }) {
               <button type="button" onClick={() => setShowCatPicker((v) => !v)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left"
                 style={{
-                  borderColor: selectedCat ? '#27AE78' : '#E5E5E3',
-                  background: selectedCat ? '#D4F5E7' : '#FFFFFF',
+                  borderColor: selectedCat ? '#6366F1' : '#E5E5E3',
+                  background: selectedCat ? '#EEF2FF' : '#FFFFFF',
                 }}>
                 {selectedCat ? (
                   <>
@@ -159,7 +159,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                       onClick={() => { setCategory(cat.id); setShowCatPicker(false); if (cat.id !== 'other') setCustomPurpose(''); }}
                       className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all"
                       style={{
-                        borderColor: category === cat.id ? '#27AE78' : 'transparent',
+                        borderColor: category === cat.id ? '#6366F1' : 'transparent',
                         background: category === cat.id ? '#FFFFFF' : 'transparent',
                       }}>
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -178,7 +178,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                 <input type="text" value={customPurpose} onChange={(e) => setCustomPurpose(e.target.value)}
                   placeholder="Describe the expense…" maxLength={200} autoFocus
                   className="mt-2 w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:outline-none input-focus"
-                  style={{ borderColor: '#27AE78', background: '#F7FFF9' }} />
+                  style={{ borderColor: '#6366F1', background: '#F7FFF9' }} />
               )}
             </div>
 
@@ -195,7 +195,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                   style={{ borderColor: '#E5E5E3' }} />
               </div>
               {totalPaise > 0 && members.length > 0 && splitMode === 'equal' && (
-                <p className="text-xs mt-1.5 font-semibold" style={{ color: '#27AE78' }}>
+                <p className="text-xs mt-1.5 font-semibold" style={{ color: '#6366F1' }}>
                   ÷ {members.length} = {formatRupees(perShare)} each
                 </p>
               )}
@@ -227,7 +227,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                 Receipt Photo <span className="font-normal normal-case" style={{ color: '#9CA3AF' }}>(optional)</span>
               </label>
               {receiptPreview ? (
-                <div className="relative rounded-2xl overflow-hidden border-2" style={{ borderColor: '#27AE78' }}>
+                <div className="relative rounded-2xl overflow-hidden border-2" style={{ borderColor: '#6366F1' }}>
                   <img src={receiptPreview} alt="Receipt" className="w-full max-h-40 object-cover" />
                   <button type="button" onClick={() => { setReceiptBase64(null); setReceiptPreview(null); }}
                     className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
@@ -235,7 +235,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                     <X size={14} />
                   </button>
                   <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold"
-                    style={{ background: 'rgba(39,174,120,0.9)', color: '#fff' }}>
+                    style={{ background: 'rgba(99,102,241,0.9)', color: '#fff' }}>
                     <Check size={11} /> Receipt attached
                   </div>
                 </div>
@@ -252,19 +252,19 @@ export default function AddExpense({ members, onAdd, onClose }) {
 
             {/* Recurring toggle */}
             <div className="rounded-2xl border-2 p-4 transition-all"
-              style={{ borderColor: isRecurring ? '#27AE78' : '#E5E5E3', background: isRecurring ? '#F7FFF9' : '#FFFFFF' }}>
+              style={{ borderColor: isRecurring ? '#6366F1' : '#E5E5E3', background: isRecurring ? '#F7FFF9' : '#FFFFFF' }}>
               <button type="button" onClick={() => setIsRecurring((v) => !v)}
                 className="w-full flex items-center gap-3 text-left">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: isRecurring ? '#D4F5E7' : '#F7F7F5' }}>
-                  <Repeat size={17} style={{ color: isRecurring ? '#27AE78' : '#9CA3AF' }} strokeWidth={1.75} />
+                  style={{ background: isRecurring ? '#EEF2FF' : '#F7F7F5' }}>
+                  <Repeat size={17} style={{ color: isRecurring ? '#6366F1' : '#9CA3AF' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold" style={{ color: '#1C1C1E' }}>Recurring monthly</p>
                   <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Auto-creates this expense every month</p>
                 </div>
                 <div className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 relative ${isRecurring ? '' : ''}`}
-                  style={{ background: isRecurring ? '#27AE78' : '#D1D5DB' }}>
+                  style={{ background: isRecurring ? '#6366F1' : '#D1D5DB' }}>
                   <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isRecurring ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
               </button>
@@ -274,7 +274,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                   <input type="number" value={recurringDay} min={1} max={28}
                     onChange={(e) => setRecurringDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
                     className="w-16 border-2 rounded-xl px-3 py-1.5 text-sm text-center font-semibold focus:outline-none input-focus"
-                    style={{ borderColor: '#27AE78' }} />
+                    style={{ borderColor: '#6366F1' }} />
                   <span className="text-xs" style={{ color: '#6B7280' }}>of each month</span>
                 </div>
               )}
@@ -290,13 +290,13 @@ export default function AddExpense({ members, onAdd, onClose }) {
                   <button key={member.id} type="button" onClick={() => setPayerId(member.id)}
                     className="flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all text-left"
                     style={{
-                      borderColor: payerId === member.id ? '#27AE78' : '#E5E5E3',
-                      background: payerId === member.id ? '#D4F5E7' : '#FFFFFF',
+                      borderColor: payerId === member.id ? '#6366F1' : '#E5E5E3',
+                      background: payerId === member.id ? '#EEF2FF' : '#FFFFFF',
                     }}
                     aria-pressed={payerId === member.id}>
                     <MemberAvatar member={member} size="sm" />
                     <span className="text-sm font-semibold truncate" style={{ color: '#1C1C1E' }}>{member.name}</span>
-                    {payerId === member.id && <Check size={14} className="ml-auto flex-shrink-0" style={{ color: '#27AE78' }} />}
+                    {payerId === member.id && <Check size={14} className="ml-auto flex-shrink-0" style={{ color: '#6366F1' }} />}
                   </button>
                 ))}
               </div>
@@ -313,9 +313,9 @@ export default function AddExpense({ members, onAdd, onClose }) {
                   <button key={id} type="button" onClick={() => setSplitMode(id)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all"
                     style={{
-                      borderColor: splitMode === id ? '#27AE78' : '#E5E5E3',
-                      background: splitMode === id ? '#D4F5E7' : '#FFFFFF',
-                      color: splitMode === id ? '#1A6B4A' : '#6B7280',
+                      borderColor: splitMode === id ? '#6366F1' : '#E5E5E3',
+                      background: splitMode === id ? '#EEF2FF' : '#FFFFFF',
+                      color: splitMode === id ? '#4F46E5' : '#6B7280',
                     }}>
                     <Icon size={15} strokeWidth={1.75} />
                     {label}
@@ -330,7 +330,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                     <span>
                       Remaining:{' '}
                       <span className="font-bold" style={{
-                        color: customRemaining < 0 ? '#FF6B35' : customRemaining === 0 ? '#27AE78' : '#F7C948'
+                        color: customRemaining < 0 ? '#FF6B35' : customRemaining === 0 ? '#6366F1' : '#F7C948'
                       }}>
                         {formatRupees(Math.abs(customRemaining))}
                         {customRemaining < 0 ? ' over' : customRemaining > 0 ? ' left' : ' ✓'}
@@ -352,7 +352,7 @@ export default function AddExpense({ members, onAdd, onClose }) {
                       </div>
                       <button type="button" onClick={() => fillRemaining(member.id)}
                         className="text-xs font-semibold px-2 py-1 rounded-lg transition-colors"
-                        style={{ color: '#27AE78', background: '#D4F5E7' }}>
+                        style={{ color: '#6366F1', background: '#EEF2FF' }}>
                         Fill
                       </button>
                     </div>
@@ -374,24 +374,24 @@ export default function AddExpense({ members, onAdd, onClose }) {
           <div className="px-5 pb-6 pt-2 flex-shrink-0">
             {selectedCat && totalPaise > 0 && (
               <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 mb-3"
-                style={{ background: '#D4F5E7', border: '1px solid #A8E6C8' }}>
+                style={{ background: '#EEF2FF', border: '1px solid #C7D2FE' }}>
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: `${selectedCat.color}20` }}>
                   <selectedCat.Icon size={14} style={{ color: selectedCat.color }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate" style={{ color: '#1A6B4A' }}>{purpose || selectedCat.label}</p>
-                  <p className="text-xs" style={{ color: '#27AE78' }}>
+                  <p className="text-xs font-semibold truncate" style={{ color: '#4F46E5' }}>{purpose || selectedCat.label}</p>
+                  <p className="text-xs" style={{ color: '#6366F1' }}>
                     {formatRupees(totalPaise)} · {splitMode === 'equal' ? `${formatRupees(perShare)}/person` : 'Custom split'}
                   </p>
                 </div>
-                <span className="text-xs font-semibold" style={{ color: '#1A6B4A' }}>{members.length} people</span>
+                <span className="text-xs font-semibold" style={{ color: '#4F46E5' }}>{members.length} people</span>
               </div>
             )}
 
             <button type="submit" disabled={loading}
               className="w-full flex items-center justify-center gap-2 text-white rounded-2xl py-4 font-heading font-semibold text-base transition-all active:scale-[0.98] disabled:opacity-60"
-              style={{ background: '#27AE78', boxShadow: '0 4px 14px rgba(39,174,120,0.30)' }}>
+              style={{ background: '#6366F1', boxShadow: '0 4px 14px rgba(99,102,241,0.30)' }}>
               {loading
                 ? <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
                 : <><Plus size={20} strokeWidth={2.5} /> Add Expense</>}

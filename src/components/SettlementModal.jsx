@@ -55,13 +55,13 @@ export default function SettlementModal({ onClose, currentMemberId }) {
           {loading ? (
             <div className="flex justify-center py-10">
               <span className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
-                style={{ borderColor: '#27AE78', borderTopColor: 'transparent' }} />
+                style={{ borderColor: '#6366F1', borderTopColor: 'transparent' }} />
             </div>
           ) : plan.length === 0 ? (
             <div className="text-center py-10">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{ background: '#D4F5E7' }}>
-                <CheckCircle2 size={32} style={{ color: '#27AE78' }} strokeWidth={1.75} />
+                style={{ background: '#EEF2FF' }}>
+                <CheckCircle2 size={32} style={{ color: '#6366F1' }} strokeWidth={1.75} />
               </div>
               <p className="font-heading font-semibold text-lg" style={{ color: '#1C1C1E' }}>All settled up!</p>
               <p className="text-sm mt-1" style={{ color: '#6B7280' }}>No pending payments in the group</p>
@@ -90,7 +90,7 @@ export default function SettlementModal({ onClose, currentMemberId }) {
                             {txn.to.upiId && (
                               <button onClick={() => handleCopyUpi(txn.to.upiId, `my-${i}`)}
                                 className="flex-shrink-0 flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-md transition-colors"
-                                style={{ background: '#FFFFFF', color: copiedUpi === `my-${i}` ? '#27AE78' : '#6B7280', border: '1px solid #E5E5E3' }}
+                                style={{ background: '#FFFFFF', color: copiedUpi === `my-${i}` ? '#6366F1' : '#6B7280', border: '1px solid #E5E5E3' }}
                                 title="Copy UPI ID">
                                 {copiedUpi === `my-${i}` ? <Check size={10} /> : <Copy size={10} />}
                               </button>
@@ -104,7 +104,7 @@ export default function SettlementModal({ onClose, currentMemberId }) {
                           {mobile && txn.to.upiId && (
                             <button onClick={() => handlePay(txn)}
                               className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg text-white"
-                              style={{ background: '#27AE78' }}>
+                              style={{ background: '#6366F1' }}>
                               <Zap size={11} strokeWidth={2.5} /> Pay Now
                             </button>
                           )}
@@ -137,7 +137,7 @@ export default function SettlementModal({ onClose, currentMemberId }) {
                               <p className="text-xs font-mono truncate" style={{ color: '#9CA3AF' }}>{txn.to.upiId}</p>
                               <button onClick={() => handleCopyUpi(txn.to.upiId, `other-${i}`)}
                                 className="flex-shrink-0 flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-md transition-colors"
-                                style={{ background: '#FFFFFF', color: copiedUpi === `other-${i}` ? '#27AE78' : '#9CA3AF', border: '1px solid #E5E5E3' }}
+                                style={{ background: '#FFFFFF', color: copiedUpi === `other-${i}` ? '#6366F1' : '#9CA3AF', border: '1px solid #E5E5E3' }}
                                 title="Copy UPI ID">
                                 {copiedUpi === `other-${i}` ? <Check size={10} /> : <Copy size={10} />}
                               </button>

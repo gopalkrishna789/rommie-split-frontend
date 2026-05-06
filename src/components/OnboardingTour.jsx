@@ -4,8 +4,8 @@ import { X, ArrowRight, Home, Plus, Users, CheckCircle2 } from 'lucide-react';
 const STEPS = [
   {
     icon: Home,
-    color: '#27AE78',
-    bg: '#D4F5E7',
+    color: '#6366F1',
+    bg: '#EEF2FF',
     title: 'Welcome to Roomie Split',
     desc: 'Track shared expenses with your roommates and settle up instantly via UPI.',
     tip: 'Your balance is always visible on the home screen.',
@@ -28,8 +28,8 @@ const STEPS = [
   },
   {
     icon: CheckCircle2,
-    color: '#27AE78',
-    bg: '#D4F5E7',
+    color: '#6366F1',
+    bg: '#EEF2FF',
     title: 'Pay & Settle Up',
     desc: 'Tap "Settle up" to see the minimum payments needed. Pay directly via PhonePe or GPay — amount is pre-filled.',
     tip: 'Once everyone pays, the expense can be deleted.',
@@ -55,7 +55,7 @@ export default function OnboardingTour({ onDone }) {
               <div key={i} className="h-1.5 rounded-full transition-all"
                 style={{
                   width: i === step ? '20px' : '6px',
-                  background: i <= step ? '#27AE78' : '#E5E5E3',
+                  background: i <= step ? '#6366F1' : '#E5E5E3',
                 }} />
             ))}
           </div>
@@ -80,9 +80,9 @@ export default function OnboardingTour({ onDone }) {
 
           {/* Tip */}
           <div className="flex items-start gap-2 rounded-xl px-4 py-3 mb-6 text-left"
-            style={{ background: '#F7FFF9', border: '1px solid #A8E6C8' }}>
+            style={{ background: '#F7FFF9', border: '1px solid #C7D2FE' }}>
             <span className="text-base flex-shrink-0">💡</span>
-            <p className="text-xs" style={{ color: '#1A6B4A' }}>{current.tip}</p>
+            <p className="text-xs" style={{ color: '#4F46E5' }}>{current.tip}</p>
           </div>
 
           {/* Buttons */}
@@ -97,7 +97,7 @@ export default function OnboardingTour({ onDone }) {
             <button
               onClick={() => isLast ? onDone() : setStep(s => s + 1)}
               className="flex-1 flex items-center justify-center gap-2 text-white rounded-xl py-3 text-sm font-heading font-semibold transition-all"
-              style={{ background: '#27AE78', boxShadow: '0 4px 14px rgba(39,174,120,0.30)' }}>
+              style={{ background: '#6366F1', boxShadow: '0 4px 14px rgba(99,102,241,0.30)' }}>
               {isLast ? <><CheckCircle2 size={16} /> Get Started</> : <>Next <ArrowRight size={16} /></>}
             </button>
           </div>

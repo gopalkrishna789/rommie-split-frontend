@@ -221,11 +221,11 @@ export default function PaymentCard({
   // ── Already paid ─────────────────────────────────────────────────────────
   if (isPaid || paymentStatus === 'paid') {
     return (
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-4 flex items-center gap-3">
-        <CheckCircle2 className="text-green-500 flex-shrink-0" size={22} />
+      <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 flex items-center gap-3">
+        <CheckCircle2 className="text-indigo-500 flex-shrink-0" size={22} />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-green-800 text-sm">Paid to {payer.name}</p>
-          <p className="text-xs text-green-600 truncate">
+          <p className="font-semibold text-indigo-800 text-sm">Paid to {payer.name}</p>
+          <p className="text-xs text-indigo-600 truncate">
             {expense.purpose} · {formatRupees(totalToPay)}
           </p>
         </div>
@@ -298,7 +298,7 @@ export default function PaymentCard({
             </button>
             <button
               onClick={() => onConfirmPayment && onConfirmPayment(splitId, true)}
-              className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
               <Check size={16} /> Yes, Received!
             </button>
@@ -352,7 +352,7 @@ export default function PaymentCard({
             <button
               onClick={handleConfirmPaid}
               disabled={marking}
-              className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm active:scale-[0.98] disabled:opacity-60 transition-all flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm active:scale-[0.98] disabled:opacity-60 transition-all flex items-center justify-center gap-2"
             >
               {marking
                 ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
@@ -432,7 +432,7 @@ export default function PaymentCard({
             </div>
           )}
           {hasPartial && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-indigo-600">
               <span>Already paid</span>
               <span className="font-medium">− {formatRupees(alreadyPaid)}</span>
             </div>
@@ -448,7 +448,7 @@ export default function PaymentCard({
                 <span>{Math.round((alreadyPaid / totalToPay) * 100)}%</span>
               </div>
               <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                <div className="h-full rounded-full bg-green-500 transition-all"
+                <div className="h-full rounded-full bg-indigo-500 transition-all"
                   style={{ width: `${Math.min((alreadyPaid / totalToPay) * 100, 100)}%` }} />
               </div>
             </div>
@@ -489,7 +489,7 @@ export default function PaymentCard({
             aria-label="Copy UPI ID"
           >
             {copied
-              ? <><Check size={13} className="text-green-500" /> Copied!</>
+              ? <><Check size={13} className="text-indigo-500" /> Copied!</>
               : <><Copy size={13} /> Copy</>}
           </button>
         </div>
@@ -623,7 +623,7 @@ export default function PaymentCard({
               className="w-full flex items-center justify-center gap-2 bg-white border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-xl py-2 text-xs font-medium transition-colors"
             >
               {copiedLink
-                ? <><Check size={13} className="text-green-500" /> Copied! Paste in your phone's browser</>
+                ? <><Check size={13} className="text-indigo-500" /> Copied! Paste in your phone's browser</>
                 : <><Copy size={13} /> Copy UPI payment link</>}
             </button>
           </div>
@@ -655,7 +655,7 @@ export default function PaymentCard({
                   </div>
                   <button onClick={handlePartialPay} disabled={partialLoading}
                     className="px-3 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition-colors"
-                    style={{ background: '#27AE78' }}>
+                    style={{ background: '#6366F1' }}>
                     {partialLoading
                       ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full inline-block" />
                       : 'Record'}
@@ -674,7 +674,7 @@ export default function PaymentCard({
               <button
                 onClick={handleMarkPaid}
                 disabled={marking}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 active:scale-[0.98] disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-all"
                 aria-label="Mark as paid"
               >
                 {marking

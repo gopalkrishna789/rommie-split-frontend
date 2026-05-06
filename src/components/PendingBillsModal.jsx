@@ -67,9 +67,9 @@ export default function PendingBillsModal({ pendingBills, currentMember, onMarkP
           style={{ borderColor: '#F3F4F6' }}>
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: allDone ? '#D4F5E7' : '#FFEEE6' }}>
+              style={{ background: allDone ? '#EEF2FF' : '#FFEEE6' }}>
               {allDone
-                ? <CheckCircle2 size={18} style={{ color: '#27AE78' }} strokeWidth={2} />
+                ? <CheckCircle2 size={18} style={{ color: '#6366F1' }} strokeWidth={2} />
                 : <AlertCircle size={18} style={{ color: '#FF6B35' }} strokeWidth={2} />}
             </div>
             <div>
@@ -94,8 +94,8 @@ export default function PendingBillsModal({ pendingBills, currentMember, onMarkP
           {allDone ? (
             <div className="text-center py-10">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{ background: '#D4F5E7' }}>
-                <CheckCircle2 size={32} style={{ color: '#27AE78' }} strokeWidth={1.75} />
+                style={{ background: '#EEF2FF' }}>
+                <CheckCircle2 size={32} style={{ color: '#6366F1' }} strokeWidth={1.75} />
               </div>
               <p className="font-heading font-semibold text-lg" style={{ color: '#1C1C1E' }}>You're all caught up!</p>
               <p className="text-sm mt-1" style={{ color: '#6B7280' }}>No pending payments</p>

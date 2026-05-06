@@ -231,7 +231,7 @@ export default function HistoryPage() {
               <button key={id} onClick={() => setFilter(id)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors"
                 style={filter === id
-                  ? { background: '#27AE78', color: '#FFFFFF' }
+                  ? { background: '#6366F1', color: '#FFFFFF' }
                   : { background: '#EFEFED', color: '#6B7280' }}>
                 {Icon && <Icon size={11} strokeWidth={2} />}
                 {label}
@@ -258,7 +258,7 @@ export default function HistoryPage() {
         {loading && expenses.length === 0 ? (
           <div className="flex justify-center py-16">
             <span className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
-              style={{ borderColor: '#27AE78', borderTopColor: 'transparent' }} />
+              style={{ borderColor: '#6366F1', borderTopColor: 'transparent' }} />
           </div>
         ) : (
           <ExpenseHistory

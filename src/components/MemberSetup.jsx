@@ -165,7 +165,7 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
           <div className="flex-1">
             {photoPreview ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-green-600 flex items-center gap-1"><Check size={12} /> Photo uploaded</span>
+                <span className="text-xs font-medium text-indigo-600 flex items-center gap-1"><Check size={12} /> Photo uploaded</span>
                 <button type="button" onClick={() => { setPhotoPreview(null); setPhotoBase64(null); }}
                   className="text-xs text-red-500 hover:underline">Remove</button>
               </div>
@@ -220,7 +220,7 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
           aria-label="Upload QR code image"
           className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors ${
             qrPreview
-              ? 'border-green-300 bg-green-50'
+              ? 'border-indigo-300 bg-indigo-50'
               : qrRequired
               ? 'border-amber-300 bg-amber-50 hover:border-amber-400'
               : 'border-gray-200 hover:border-indigo-300'
@@ -233,7 +233,7 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
                 alt="QR preview"
                 className="w-36 h-36 object-contain mx-auto rounded-xl border border-gray-200 bg-white p-1"
               />
-              <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+              <p className="text-xs text-indigo-600 font-medium flex items-center gap-1">
                 <Check size={12} /> QR uploaded
               </p>
             </div>
@@ -289,7 +289,7 @@ export default function MemberSetup({ onSave, onCancel, initialData = {}, qrRequ
           type="submit"
           disabled={loading}
           className="flex-1 disabled:opacity-60 text-white rounded-xl py-3 font-semibold transition-colors"
-          style={{ background: '#27AE78' }}
+          style={{ background: '#6366F1' }}
         >
           {loading ? 'Saving...' : 'Save Profile'}
         </button>

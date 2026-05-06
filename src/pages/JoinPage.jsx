@@ -127,9 +127,9 @@ export default function JoinPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="relative inline-block mb-4">
-            <div className="absolute inset-0 rounded-3xl bg-green-400 blur-xl opacity-25 scale-110" />
+            <div className="absolute inset-0 rounded-3xl bg-indigo-400 blur-xl opacity-25 scale-110" />
             <div className="relative w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl"
-              style={{ background: 'linear-gradient(135deg, #1A6B4A, #27AE78)' }}>
+              style={{ background: 'linear-gradient(135deg, #667EEA, #764BA2)' }}>
               <Home size={36} className="text-white" strokeWidth={1.5} />
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function JoinPage() {
               { icon: Shield, label: 'Secure' },
             ].map(({ icon: Icon, label }) => (
               <span key={label} className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm"
-                style={{ background: '#D4F5E7', color: '#1A6B4A', border: '1px solid #A8E6C8' }}>
+                style={{ background: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE' }}>
                 <Icon size={11} />
                 {label}
               </span>
@@ -163,7 +163,7 @@ export default function JoinPage() {
                 onClick={() => switchMode(id)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200"
                 style={mode === id
-                  ? { background: '#FFFFFF', color: '#1A6B4A', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
+                  ? { background: '#FFFFFF', color: '#4F46E5', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
                   : { color: '#6B7280' }}
               >
                 <Icon size={13} />
@@ -343,8 +343,8 @@ export default function JoinPage() {
             {mode === 'create' && createdRoom && (
               <div className="space-y-4 animate-scale-in">
                 <div className="text-center py-2">
-                  <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <Check size={28} className="text-green-600" strokeWidth={2.5} />
+                  <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Check size={28} className="text-indigo-600" strokeWidth={2.5} />
                   </div>
                   <p className="font-bold text-gray-900 text-lg">Room Created!</p>
                   <p className="text-sm text-gray-500">{createdRoom.name}</p>

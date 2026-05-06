@@ -84,7 +84,7 @@ export default function MembersPage() {
           </button>
           <h1 className="font-heading font-semibold flex-1" style={{ color: '#1C1C1E' }}>Members</h1>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-            style={{ background: '#D4F5E7', color: '#1A6B4A' }}>
+            style={{ background: '#EEF2FF', color: '#4F46E5' }}>
             {members.length} member{members.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -97,8 +97,8 @@ export default function MembersPage() {
           <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: '#D4F5E7' }}>
-                <Users size={14} style={{ color: '#27AE78' }} strokeWidth={1.75} />
+                style={{ background: '#EEF2FF' }}>
+                <Users size={14} style={{ color: '#6366F1' }} strokeWidth={1.75} />
               </div>
               <p className="font-heading font-semibold text-sm" style={{ color: '#1C1C1E' }}>Invite Roommates</p>
             </div>
@@ -106,22 +106,22 @@ export default function MembersPage() {
               Share this code — roommates go to "Join Room", enter the code, and create their own account.
             </p>
             <div className="flex items-center gap-2 rounded-xl px-4 py-3"
-              style={{ background: '#F7FFF9', border: '1px solid #A8E6C8' }}>
+              style={{ background: '#F7FFF9', border: '1px solid #C7D2FE' }}>
               <div className="flex-1">
                 <p className="text-xs mb-0.5" style={{ color: '#6B7280' }}>Room Code</p>
-                <p className="text-xl font-heading font-bold font-mono tracking-[0.2em]" style={{ color: '#1A6B4A' }}>
+                <p className="text-xl font-heading font-bold font-mono tracking-[0.2em]" style={{ color: '#4F46E5' }}>
                   {inviteCode}
                 </p>
               </div>
               <div className="flex gap-2">
                 <button onClick={handleCopyCode}
                   className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors border"
-                  style={{ background: '#FFFFFF', borderColor: '#A8E6C8', color: '#27AE78' }}>
+                  style={{ background: '#FFFFFF', borderColor: '#C7D2FE', color: '#6366F1' }}>
                   {codeCopied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
                 </button>
                 <button onClick={handleShare}
                   className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-colors"
-                  style={{ background: '#27AE78' }}>
+                  style={{ background: '#6366F1' }}>
                   <Share2 size={13} /> Share
                 </button>
               </div>
@@ -146,7 +146,7 @@ export default function MembersPage() {
               <button onClick={handleToggleLock} disabled={lockLoading}
                 className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
                 style={isLocked
-                  ? { background: '#D4F5E7', color: '#1A6B4A' }
+                  ? { background: '#EEF2FF', color: '#4F46E5' }
                   : { background: '#FFEEE6', color: '#CC4A12' }}>
                 {lockLoading ? '…' : isLocked ? 'Unlock' : 'Lock'}
               </button>
@@ -158,7 +158,7 @@ export default function MembersPage() {
         {loading ? (
           <div className="flex justify-center py-16">
             <span className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
-              style={{ borderColor: '#27AE78', borderTopColor: 'transparent' }} />
+              style={{ borderColor: '#6366F1', borderTopColor: 'transparent' }} />
           </div>
         ) : (
           <div className="space-y-3">

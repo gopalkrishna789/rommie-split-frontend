@@ -41,10 +41,12 @@ export default function HomePage() {
       loadPendingBills();
       loadPendingConfirmations();
     });
-    // Show onboarding tour on first visit
-    if (!localStorage.getItem('roomie_tour_done')) {
+    
+    // Show onboarding tour if not completed (check from member data)
+    if (!member.tour_completed && !localStorage.getItem('roomie_tour_done')) {
       setTimeout(() => setShowTour(true), 800);
     }
+    
     // Listen for service worker messages (notification click → open pending)
     const handleSwMessage = (event) => {
       if (event.data?.type === 'OPEN_PENDING') {
@@ -177,7 +179,7 @@ export default function HomePage() {
           {/* Room info */}
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #1A6B4A, #27AE78)' }}>
+              style={{ background: 'linear-gradient(135deg, #667EEA, #764BA2)' }}>
               <Home size={18} className="text-white" strokeWidth={1.75} />
             </div>
             <div className="min-w-0">
@@ -186,7 +188,7 @@ export default function HomePage() {
               </h1>
               <button onClick={handleShareCode}
                 className="flex items-center gap-1 text-xs transition-colors mt-0.5"
-                style={{ color: '#27AE78' }}>
+                style={{ color: '#6366F1' }}>
                 {copied
                   ? <><Check size={10} /> Copied!</>
                   : <><Share2 size={10} /> Code: {code}</>}
@@ -267,9 +269,26 @@ export default function HomePage() {
         />
       )}
       {showTour && (
-        <OnboardingTour onDone={() => {
+        <OnboardingTour onDone={async () => {
           setShowTour(false);
           localStorage.setItem('roomie_tour_done', '1');
+          // Mark tour as completed in database
+          try {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/members/tour-complete`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('roomie_token')}`,
+              },
+            });
+            // Update local member data
+            const member = JSON.parse(localStorage.getItem('roomie_member') || '{}');
+            member.tour_completed = true;
+            localStorage.setItem('roomie_member', JSON.stringify(member));
+          } catch (err) {
+            console.error('Failed to mark tour complete:', err);
+          }
         }} />
       )}
     </div>
@@ -300,8 +319,8 @@ function BottomNav({ onAddExpense }) {
                   onClick={tab.action}
                   className="relative -mt-7 w-14 h-14 rounded-2xl flex items-center justify-center transition-all active:scale-95 hover:scale-105"
                   style={{
-                    background: 'linear-gradient(135deg, #1A6B4A, #27AE78)',
-                    boxShadow: '0 6px 20px rgba(39,174,120,0.40)',
+                    background: 'linear-gradient(135deg, #667EEA, #764BA2)',
+                    boxShadow: '0 6px 20px rgba(99,102,241,0.40)',
                   }}
                   aria-label="Add expense"
                 >
@@ -324,10 +343,10 @@ function BottomNav({ onAddExpense }) {
                 <Icon
                   size={20}
                   strokeWidth={isActive ? 2 : 1.75}
-                  style={{ color: isActive ? '#27AE78' : '#9CA3AF' }}
+                  style={{ color: isActive ? '#6366F1' : '#9CA3AF' }}
                 />
                 <span className="text-xs font-semibold transition-colors"
-                  style={{ color: isActive ? '#27AE78' : '#9CA3AF' }}>
+                  style={{ color: isActive ? '#6366F1' : '#9CA3AF' }}>
                   {tab.label}
                 </span>
                 {isActive && <div className="nav-active-dot" />}

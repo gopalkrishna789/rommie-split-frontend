@@ -6,8 +6,8 @@ import { formatRupees } from '../utils/upiLink';
 import MemberAvatar from '../components/MemberAvatar';
 
 const ACTION_CONFIG = {
-  expense_added:   { icon: Plus,         color: '#27AE78', bg: '#D4F5E7', label: 'Added expense' },
-  payment_made:    { icon: CheckCircle2, color: '#27AE78', bg: '#D4F5E7', label: 'Paid' },
+  expense_added:   { icon: Plus,         color: '#6366F1', bg: '#EEF2FF', label: 'Added expense' },
+  payment_made:    { icon: CheckCircle2, color: '#6366F1', bg: '#EEF2FF', label: 'Paid' },
   partial_payment: { icon: CreditCard,   color: '#F7C948', bg: '#FFF8E0', label: 'Partial payment' },
   expense_edited:  { icon: Edit3,        color: '#6366f1', bg: '#EEF2FF', label: 'Edited expense' },
   recurring:       { icon: RefreshCw,    color: '#06b6d4', bg: '#ECFEFF', label: 'Recurring' },
@@ -46,7 +46,7 @@ export default function ActivityPage() {
             <ArrowLeft size={20} strokeWidth={1.75} style={{ color: '#1C1C1E' }} />
           </button>
           <h1 className="font-heading font-semibold flex-1" style={{ color: '#1C1C1E' }}>Activity</h1>
-          <Activity size={18} style={{ color: '#27AE78' }} strokeWidth={1.75} />
+          <Activity size={18} style={{ color: '#6366F1' }} strokeWidth={1.75} />
         </div>
       </header>
 
@@ -54,7 +54,7 @@ export default function ActivityPage() {
         {loading ? (
           <div className="flex justify-center py-16">
             <span className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
-              style={{ borderColor: '#27AE78', borderTopColor: 'transparent' }} />
+              style={{ borderColor: '#6366F1', borderTopColor: 'transparent' }} />
           </div>
         ) : activities.length === 0 ? (
           <div className="text-center py-16 rounded-2xl border"
@@ -102,7 +102,7 @@ export default function ActivityPage() {
                   {/* Amount */}
                   {act.amount && (
                     <span className="text-sm font-heading font-semibold tabular-nums flex-shrink-0"
-                      style={{ color: act.action === 'payment_made' ? '#27AE78' : '#1C1C1E' }}>
+                      style={{ color: act.action === 'payment_made' ? '#6366F1' : '#1C1C1E' }}>
                       {act.action === 'payment_made' ? '+' : ''}{formatRupees(act.amount)}
                     </span>
                   )}
