@@ -9,10 +9,14 @@ import PendingBillsModal from '../components/PendingBillsModal';
 import PendingConfirmations from '../components/PendingConfirmations';
 import ThemeToggle from '../components/ThemeToggle';
 import OnboardingTour from '../components/OnboardingTour';
+import ProfileMenu from '../components/ProfileMenu';
+import RoomSwitcher from '../components/RoomSwitcher';
+import InviteModal from '../components/InviteModal';
 import { useExpenses } from '../hooks/useExpenses';
 import { useMembers } from '../hooks/useMembers';
 import { useSocket } from '../hooks/useSocket';
-import { authApi, expensesApi } from '../utils/api';
+import { useOfflineQueue } from '../hooks/useOfflineQueue';
+import { authApi, expensesApi, membersApi } from '../utils/api';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -26,9 +30,19 @@ export default function HomePage() {
   const [copied, setCopied]                = useState(false);
   const [mounted, setMounted]              = useState(false);
   const [showTour, setShowTour]            = useState(false);
+  const [showInvite, setShowInvite]        = useState(false);
+  const [offlineToast, setOfflineToast]    = useState(false);
 
-  const { expenses, balances, fetchExpenses, fetchBalances, addExpense, markSplitPaid, removeExpense, onExpenseAdded, onExpenseUpdated, onSplitPaid, onBalanceUpdated } = useExpenses();
+  const { expenses, balances, netPairs, fetchExpenses, fetchBalances, addExpense, markSplitPaid, removeExpense, onExpenseAdded, onExpenseUpdated, onSplitPaid, onBalanceUpdated } = useExpenses();
   const { members, fetchMembers } = useMembers();
+
+  const { isOnline, queueCount, syncing, addExpenseWithFallback } = useOfflineQueue({
+    onSynced: ({ succeeded }) => {
+      // Refresh data after syncing queued expenses
+      fetchExpenses();
+      fetchBalances();
+    },
+  });
 
   useEffect(() => {
     const member = JSON.parse(localStorage.getItem('roomie_member') || 'null');
@@ -42,8 +56,8 @@ export default function HomePage() {
       loadPendingConfirmations();
     });
     
-    // Show onboarding tour if not completed (check from member data)
-    if (!member.tour_completed && !localStorage.getItem('roomie_tour_done')) {
+    // Show onboarding tour only if not completed in database
+    if (!member.tour_completed) {
       setTimeout(() => setShowTour(true), 800);
     }
     
@@ -51,6 +65,11 @@ export default function HomePage() {
     const handleSwMessage = (event) => {
       if (event.data?.type === 'OPEN_PENDING') {
         loadPendingBills().then(() => setShowPending(true));
+      }
+      // SW tells us to replay the offline queue
+      if (event.data?.type === 'SYNC_QUEUE') {
+        fetchExpenses();
+        fetchBalances();
       }
     };
     navigator.serviceWorker?.addEventListener('message', handleSwMessage);
@@ -111,7 +130,20 @@ export default function HomePage() {
     },
   });
 
-  const handleAddExpense = async (data) => { await addExpense(data); fetchBalances(); loadPendingBills(); loadPendingConfirmations(); };
+  const handleAddExpense = async (data) => {
+    const result = await addExpenseWithFallback(data);
+    if (result?.queued) {
+      // Expense queued offline — show a toast-like feedback
+      setOfflineToast(true);
+      setTimeout(() => setOfflineToast(false), 3500);
+      return;
+    }
+    // Online path — use the normal addExpense to update local state
+    await addExpense(data);
+    fetchBalances();
+    loadPendingBills();
+    loadPendingConfirmations();
+  };
   const handleMarkPaid   = async (splitId) => {
     const response = await markSplitPaid(splitId);
     
@@ -173,19 +205,47 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ── Offline banner ── */}
+      {mounted && !isOnline && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-2 py-2 text-xs font-semibold"
+          style={{ background: '#1C1C1E', color: '#FFFFFF' }}>
+          <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+          You're offline — expenses will sync when you reconnect
+          {queueCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px]" style={{ background: '#FF6B35' }}>{queueCount} queued</span>}
+        </div>
+      )}
+
+      {/* ── Syncing banner ── */}
+      {mounted && isOnline && syncing && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-2 py-2 text-xs font-semibold"
+          style={{ background: '#6366F1', color: '#FFFFFF' }}>
+          <span className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+          Syncing {queueCount} offline expense{queueCount !== 1 ? 's' : ''}…
+        </div>
+      )}
+
+      {/* ── Offline toast ── */}
+      {offlineToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in-up"
+          style={{ background: '#1C1C1E', color: '#FFFFFF', whiteSpace: 'nowrap' }}>
+          <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+          Saved offline — will sync when connected
+        </div>
+      )}
+
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 glass border-b" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
         <div className="max-w-[420px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          {/* Room info */}
+          {/* Room info — now a room switcher */}
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #667EEA, #764BA2)' }}>
-              <Home size={18} className="text-white" strokeWidth={1.75} />
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-heading font-semibold text-sm leading-tight truncate" style={{ color: '#1C1C1E' }}>
-                {currentRoom?.name || 'Roomie Split'}
-              </h1>
+            <RoomSwitcher
+              currentRoom={currentRoom}
+              currentMember={currentMember}
+              onRoomSwitch={() => {
+                // State will be reset by full page reload in RoomSwitcher
+              }}
+            />
+            <div className="min-w-0 hidden sm:block">
               <button onClick={handleShareCode}
                 className="flex items-center gap-1 text-xs transition-colors mt-0.5"
                 style={{ color: '#6366F1' }}>
@@ -220,12 +280,7 @@ export default function HomePage() {
             )}
             <ThemeToggle />
             <NotificationBell />
-            <button onClick={handleLogout}
-              className="p-2 rounded-xl transition-colors"
-              style={{ color: '#6B7280' }}
-              aria-label="Logout">
-              <LogOut size={17} strokeWidth={1.75} />
-            </button>
+            <ProfileMenu member={currentMember} roomCode={code} />
           </div>
         </div>
       </header>
@@ -240,6 +295,8 @@ export default function HomePage() {
             currentMemberId={currentMember.id} members={members}
             onAddExpense={() => setShowAddExpense(true)}
             pendingCount={pendingCount} onShowPending={() => setShowPending(true)}
+            netPairs={netPairs}
+            onInvite={() => setShowInvite(true)}
           />
         )}
       </main>
@@ -257,7 +314,8 @@ export default function HomePage() {
           currentMember={currentMember} 
           onMarkPaid={handleMarkPaid} 
           onConfirmPayment={handleConfirmPayment}
-          onClose={() => setShowPending(false)} 
+          onClose={() => setShowPending(false)}
+          netPairs={netPairs}
         />
       )}
       {showConfirmations && (
@@ -274,14 +332,7 @@ export default function HomePage() {
           localStorage.setItem('roomie_tour_done', '1');
           // Mark tour as completed in database
           try {
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/members/tour-complete`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('roomie_token')}`,
-              },
-            });
+            await membersApi.tourComplete();
             // Update local member data
             const member = JSON.parse(localStorage.getItem('roomie_member') || '{}');
             member.tour_completed = true;
@@ -290,6 +341,9 @@ export default function HomePage() {
             console.error('Failed to mark tour complete:', err);
           }
         }} />
+      )}
+      {showInvite && (
+        <InviteModal room={currentRoom} onClose={() => setShowInvite(false)} />
       )}
     </div>
   );

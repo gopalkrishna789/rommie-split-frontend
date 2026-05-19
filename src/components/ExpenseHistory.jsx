@@ -15,6 +15,7 @@ export default function ExpenseHistory({
   const [loadingSplits, setLoadingSplits]   = useState({});
   const [payLaterIds, setPayLaterIds]       = useState(new Set());
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [forceDeleteId, setForceDeleteId]   = useState(null); // needs force=true
   const [deleting, setDeleting]             = useState(false);
   const [attemptsByExpense, setAttemptsByExpense] = useState({});
   const [remindingId, setRemindingId]       = useState(null);

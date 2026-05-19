@@ -11,7 +11,27 @@ export default function SettlementModal({ onClose, currentMemberId }) {
 
   useEffect(() => {
     expensesApi.settlementPlan()
-      .then(res => setPlan(res.data.transactions))
+      .then(res => {
+        // Normalize flat backend shape → nested { from, to } objects the UI expects
+        const normalized = (res.data.transactions || []).map(t => ({
+          from: {
+            id:       t.from,
+            name:     t.fromName,
+            color:    t.fromColor,
+            initials: t.fromInitials,
+          },
+          to: {
+            id:      t.to,
+            name:    t.toName,
+            color:   t.toColor,
+            initials: t.toInitials,
+            upiId:   t.toUpiId,
+            qrCode:  t.toQrCode,
+          },
+          amount: t.amount,
+        }));
+        setPlan(normalized);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

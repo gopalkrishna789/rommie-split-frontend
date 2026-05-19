@@ -8,6 +8,7 @@ import {
 import { formatRupees } from '../utils/upiLink';
 import { calcGroupTotal, thisMonthExpenses } from '../utils/splitCalc';
 import MemberAvatar from './MemberAvatar';
+import SpendingCharts from './SpendingCharts';
 import { useNavigate } from 'react-router-dom';
 
 // ── Dashboard skeleton ────────────────────────────────────────────────────
@@ -84,7 +85,8 @@ export function CategoryIcon({ category = 'other', purpose = '', size = 18 }) {
 
 export default function Dashboard({
   balances, expenses, currentMemberId, members,
-  onAddExpense, pendingCount = 0, onShowPending,
+  onAddExpense, pendingCount = 0, onShowPending, netPairs = [],
+  onInvite,
 }) {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
@@ -176,6 +178,52 @@ export default function Dashboard({
           </button>
         )}
       </div>
+
+      {/* ── Net pair breakdown ── */}
+      {netPairs.length > 0 && (() => {
+        const myPairs = netPairs.filter(p => p.fromId === currentMemberId || p.toId === currentMemberId);
+        if (!myPairs.length) return null;
+        return (
+          <div className={`rounded-2xl overflow-hidden ${visible ? 'animate-fade-in-up delay-50' : 'opacity-0'}`}
+            style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
+            <div className="px-4 pt-3.5 pb-1 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>
+                Net Balances
+              </p>
+              <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                style={{ background: '#EEF2FF', color: '#6366F1' }}>
+                After mutual offset
+              </span>
+            </div>
+            <div className="divide-y" style={{ borderColor: '#F3F4F6' }}>
+              {myPairs.map((pair, i) => {
+                const iOwe = pair.fromId === currentMemberId;
+                const otherName = iOwe ? pair.toName : pair.fromName;
+                const otherColor = iOwe ? pair.toColor : pair.fromColor;
+                const otherInitials = iOwe ? pair.toInitials : pair.fromInitials;
+                return (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                      style={{ background: otherColor || '#6366F1' }}>
+                      {otherInitials}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold" style={{ color: '#1C1C1E' }}>{otherName}</p>
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>
+                        {iOwe ? 'You owe (net)' : 'Owes you (net)'}
+                      </p>
+                    </div>
+                    <span className="font-heading font-bold text-sm tabular-nums"
+                      style={{ color: iOwe ? '#CC4A12' : '#059669' }}>
+                      {iOwe ? '-' : '+'}{formatRupees(pair.amount)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Quick actions ── */}
       <div className={`grid grid-cols-2 gap-3 ${visible ? 'animate-fade-in-up delay-100' : 'opacity-0'}`}>
@@ -367,68 +415,44 @@ export default function Dashboard({
         })()}
       </div>
 
-      {/* ── Spending breakdown ── */}
+      {/* ── Spending insights (charts) ── */}
       {expenses.length > 0 && (
-        <SpendingBreakdown expenses={thisMonthExpenses(expenses)} visible={visible} />
+        <div className={`${visible ? 'animate-fade-in-up delay-400' : 'opacity-0'}`}>
+          <SpendingCharts
+            expenses={expenses}
+            members={members}
+            currentMemberId={currentMemberId}
+          />
+        </div>
+      )}
+
+      {/* ── Invite banner (shown when room has < 4 members) ── */}
+      {members.length < 4 && onInvite && (
+        <div className={`${visible ? 'animate-fade-in-up delay-500' : 'opacity-0'}`}>
+          <button
+            onClick={onInvite}
+            className="w-full flex items-center gap-3 rounded-2xl p-4 text-left transition-all active:scale-[0.98]"
+            style={{ background: 'linear-gradient(135deg, #EEF2FF, #F5F3FF)', border: '1px solid #C7D2FE' }}
+          >
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: '#6366F120' }}>
+              <ArrowRight size={18} style={{ color: '#6366F1' }} strokeWidth={2} />
+            </div>
+            <div className="flex-1">
+              <p className="font-heading font-semibold text-sm" style={{ color: '#4F46E5' }}>
+                Invite roommates
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#6366F1' }}>
+                Share via WhatsApp, email or copy the code
+              </p>
+            </div>
+            <ChevronRight size={16} style={{ color: '#6366F1' }} />
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-function SpendingBreakdown({ expenses, visible }) {
-  const navigate = useNavigate();
 
-  const totals = expenses.reduce((acc, e) => {
-    const cat = e.category || 'other';
-    acc[cat] = (acc[cat] || 0) + e.total_amount;
-    return acc;
-  }, {});
 
-  const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const total  = sorted.reduce((s, [, v]) => s + v, 0);
-  if (sorted.length === 0) return null;
-
-  return (
-    <div className={`${visible ? 'animate-fade-in-up delay-400' : 'opacity-0'}`}>
-      <div className="flex items-center justify-between mb-3">
-        <p className="font-heading font-semibold text-sm flex items-center gap-1.5" style={{ color: '#1C1C1E' }}>
-          <TrendingUp size={14} style={{ color: '#6366F1' }} />
-          This Month
-        </p>
-        <button onClick={() => navigate('/history')}
-          className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#6366F1' }}>
-          Details <ChevronRight size={13} />
-        </button>
-      </div>
-
-      <div className="rounded-2xl p-4 space-y-3" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-        {/* Bar */}
-        <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
-          {sorted.map(([cat, val]) => {
-            const { color } = CAT[cat] || CAT.other;
-            return (
-              <div key={cat} className="h-full rounded-full"
-                style={{ width: `${(val / total) * 100}%`, background: color }} />
-            );
-          })}
-        </div>
-        {/* Legend */}
-        <div className="space-y-2">
-          {sorted.map(([cat, val]) => {
-            const { Icon, color } = CAT[cat] || CAT.other;
-            return (
-              <div key={cat} className="flex items-center gap-2">
-                <Icon size={13} style={{ color }} strokeWidth={1.75} className="flex-shrink-0" />
-                <span className="text-xs flex-1 capitalize" style={{ color: '#6B7280' }}>{cat}</span>
-                <span className="text-xs font-semibold tabular-nums" style={{ color: '#1C1C1E' }}>{formatRupees(val)}</span>
-                <span className="text-xs w-8 text-right" style={{ color: '#9CA3AF' }}>
-                  {Math.round((val / total) * 100)}%
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}

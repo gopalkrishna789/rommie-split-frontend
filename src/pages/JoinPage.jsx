@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LogIn, Copy, Check, ArrowRight, Eye, EyeOff,
-  Home, Users, Plus, Zap, Clock, Shield,
+  Home, Users, Plus, Zap, Clock, Shield, Mail,
 } from 'lucide-react';
 import { authApi } from '../utils/api';
 
@@ -40,11 +40,12 @@ export default function JoinPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => { setMounted(true); }, []);
 
   const switchMode = (m) => {
-    setMode(m); setError('');
+    setMode(m); setError(''); setSuccessMsg('');
     setCreatedRoom(null); setInviteCode('');
     setSigninEmail(''); setSigninPassword(''); setSigninCode('');
   };
@@ -103,6 +104,19 @@ export default function JoinPage() {
     } finally { setLoading(false); }
   };
 
+  /* ── Forgot password ── */
+  const handleForgotPassword = async (e) => {
+    e.preventDefault(); setError(''); setSuccessMsg('');
+    if (!signinEmail.trim()) return setError('Enter your email address');
+    setLoading(true);
+    try {
+      await authApi.forgotPassword(signinEmail.trim().toLowerCase());
+      setSuccessMsg('Check your email — we sent a reset link if that address is registered.');
+    } catch {
+      setSuccessMsg('Check your email — we sent a reset link if that address is registered.');
+    } finally { setLoading(false); }
+  };
+
   const copyCode = async () => {
     await navigator.clipboard.writeText(createdRoom.invite_code).catch(() => {});
     setCodeCopied(true);
@@ -110,9 +124,9 @@ export default function JoinPage() {
   };
 
   const tabs = [
-    { id: 'signin', label: 'Sign In', icon: LogIn },
-    { id: 'join',   label: 'Join Room', icon: Users },
-    { id: 'create', label: 'Create Room', icon: Plus },
+    { id: 'signin', label: 'Sign In',     icon: LogIn  },
+    { id: 'join',   label: 'Join Room',   icon: Users  },
+    { id: 'create', label: 'Create Room', icon: Plus   },
   ];
 
   return (
@@ -238,10 +252,67 @@ export default function JoinPage() {
                   {loading ? <Spinner /> : <><LogIn size={17} /> Sign In</>}
                 </button>
 
-                <p className="text-xs text-center text-gray-400">
-                  New here?{' '}
+                <div className="flex items-center justify-between text-xs text-gray-400">
                   <button type="button" onClick={() => switchMode('join')} className="text-indigo-600 font-semibold hover:underline">
-                    Join with an invite code
+                    New here? Join with invite code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMode('forgot')}
+                    className="text-gray-400 hover:text-indigo-600 hover:underline transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ── FORGOT PASSWORD ── */}
+            {mode === 'forgot' && (
+              <form onSubmit={handleForgotPassword} className="space-y-4 animate-fade-in">
+                <div className="text-center pb-1">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Mail size={22} className="text-indigo-500" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-800">Reset your password</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Enter your email and we'll send a reset link.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={signinEmail}
+                    onChange={(e) => setSigninEmail(e.target.value)}
+                    placeholder="you@gmail.com"
+                    autoFocus
+                    className="w-full border-2 border-gray-200 rounded-2xl px-4 py-3 text-sm input-glow transition-all bg-white/80"
+                  />
+                </div>
+
+                {error && <ErrorBox msg={error} />}
+
+                {successMsg && (
+                  <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium"
+                    style={{ background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0' }}>
+                    <Check size={14} className="flex-shrink-0" />
+                    {successMsg}
+                  </div>
+                )}
+
+                {!successMsg && (
+                  <button type="submit" disabled={loading} className="btn-primary">
+                    {loading ? <Spinner /> : <><Mail size={16} /> Send Reset Link</>}
+                  </button>
+                )}
+
+                <p className="text-xs text-center text-gray-400">
+                  <button type="button" onClick={() => switchMode('signin')} className="text-indigo-600 font-semibold hover:underline">
+                    ← Back to Sign In
                   </button>
                 </p>
               </form>

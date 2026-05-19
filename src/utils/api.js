@@ -5,7 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,
   withCredentials: true, // send httpOnly cookies
-  timeout: 10000,
+  timeout: 30000,        // 30s — handles Render.com cold starts
   headers: {
     'Content-Type': 'application/json',
   },
@@ -50,6 +50,12 @@ export const authApi = {
   login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
+  // Multi-room
+  myRooms: () => api.get('/auth/my-rooms'),
+  switchRoom: (roomId) => api.post('/auth/switch-room', { roomId }),
+  joinRoom: (data) => api.post('/auth/join-room', data),
 };
 
 // ── Members ───────────────────────────────────────────────────────────────
@@ -58,6 +64,7 @@ export const membersApi = {
   add: (data) => api.post('/members', data),
   update: (id, data) => api.put(`/members/${id}`, data),
   remove: (id) => api.delete(`/members/${id}/remove`),
+  tourComplete: () => api.post('/members/tour-complete'),
 };
 
 // ── Expenses ──────────────────────────────────────────────────────────────
@@ -71,8 +78,9 @@ export const expensesApi = {
   recordAttempt: (splitId, upiApp, amount) =>
     api.post(`/splits/${splitId}/attempt`, { upiApp, amount }),
   getAttempts: (splitId) => api.get(`/splits/${splitId}/attempts`),
-  deleteExpense: (expenseId) => api.delete(`/expenses/${expenseId}`),
+  deleteExpense: (expenseId, force = false) => api.delete(`/expenses/${expenseId}`, { data: { force } }),
   balances: () => api.get('/balances'),
+  netBalances: () => api.get('/net-balances'),
   myPending: () => api.get('/my-pending'),
   activity: (limit) => api.get('/activity', { params: { limit } }),
   settlementPlan: () => api.get('/settlement-plan'),
@@ -80,6 +88,7 @@ export const expensesApi = {
   payerVerify: (splitId, approve) => api.post(`/splits/${splitId}/payer-verify`, { approve }),
   lockRoom: (lock) => api.post('/room/lock', { lock }),
   sendReminder: (splitId) => api.post(`/splits/${splitId}/remind`),
+  getExpenseEdits: (expenseId) => api.get(`/expenses/${expenseId}/edits`),
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────

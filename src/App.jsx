@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import JoinPage from './pages/JoinPage';
 import SetupPage from './pages/SetupPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import HomePage from './pages/HomePage';
 import HistoryPage from './pages/HistoryPage';
 import MembersPage from './pages/MembersPage';
@@ -23,6 +24,7 @@ export default function App() {
         {/* Public routes */}
         <Route path="/join" element={<JoinPage />} />
         <Route path="/setup" element={<SetupPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Protected routes */}
         <Route

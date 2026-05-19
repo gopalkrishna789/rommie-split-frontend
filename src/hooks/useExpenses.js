@@ -4,6 +4,7 @@ import { expensesApi } from '../utils/api';
 export function useExpenses() {
   const [expenses, setExpenses] = useState([]);
   const [balances, setBalances] = useState([]);
+  const [netPairs, setNetPairs] = useState([]); // per-pair net amounts after mutual cancellation
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,7 +18,6 @@ export function useExpenses() {
       if (page === 1) {
         setExpenses(data);
       } else {
-        // Deduplicate when appending pages
         setExpenses((prev) => {
           const existingIds = new Set(prev.map((e) => e.id));
           const newItems = data.filter((e) => !existingIds.has(e.id));
@@ -34,10 +34,17 @@ export function useExpenses() {
 
   const fetchBalances = useCallback(async () => {
     try {
-      const res = await expensesApi.balances();
+      // Use net-balances — mutual debts are cancelled out
+      const res = await expensesApi.netBalances();
       setBalances(res.data.balances);
+      setNetPairs(res.data.netPairs || []);
     } catch (err) {
       console.error('Failed to fetch balances:', err);
+      // Fallback to gross balances
+      try {
+        const res = await expensesApi.balances();
+        setBalances(res.data.balances);
+      } catch {}
     }
   }, []);
 
@@ -93,6 +100,7 @@ export function useExpenses() {
   return {
     expenses,
     balances,
+    netPairs,
     pagination,
     loading,
     error,

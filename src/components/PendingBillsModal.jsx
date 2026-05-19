@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import PaymentCard from './PaymentCard';
 import { formatRupees } from '../utils/upiLink';
 
@@ -27,7 +27,7 @@ function saveDismissed(set) {
   } catch {}
 }
 
-export default function PendingBillsModal({ pendingBills, currentMember, onMarkPaid, onConfirmPayment, onClose }) {
+export default function PendingBillsModal({ pendingBills, currentMember, onMarkPaid, onConfirmPayment, onClose, netPairs = [] }) {
   const [dismissed, setDismissed] = useState(() => loadDismissed());
   const [paidIds, setPaidIds]     = useState(new Set());
 
@@ -47,6 +47,26 @@ export default function PendingBillsModal({ pendingBills, currentMember, onMarkP
   const visible  = pendingBills.filter((b) => !dismissed.has(b.split.id) && !paidIds.has(b.split.id));
   const totalDue = visible.reduce((sum, b) => sum + b.split.share + (b.split.carry_forward || 0), 0);
   const allDone  = visible.length === 0;
+
+  // Build net offset info per payer from netPairs
+  // netPairs: [{ fromId, toId, amount, fromName, toName, ... }]
+  // Group pending bills by payer and compute net amount after mutual offset
+  const netByPayer = {};
+  if (currentMember && netPairs.length > 0) {
+    // Find all pairs involving current member
+    const myPairs = netPairs.filter(
+      (p) => p.fromId === currentMember.id || p.toId === currentMember.id
+    );
+    myPairs.forEach((pair) => {
+      const iOwe = pair.fromId === currentMember.id;
+      const otherId = iOwe ? pair.toId : pair.fromId;
+      netByPayer[otherId] = {
+        netAmount: pair.amount,
+        iOwe,
+        otherName: iOwe ? pair.toName : pair.fromName,
+      };
+    });
+  }
 
   const handleMarkPaid = async (splitId) => {
     await onMarkPaid(splitId);
@@ -100,27 +120,88 @@ export default function PendingBillsModal({ pendingBills, currentMember, onMarkP
               <p className="font-heading font-semibold text-lg" style={{ color: '#1C1C1E' }}>You're all caught up!</p>
               <p className="text-sm mt-1" style={{ color: '#6B7280' }}>No pending payments</p>
             </div>
-          ) : (
-            visible.map(({ expense, split, payer }) => (
-              <PaymentCard
-                key={split.id}
-                expense={expense}
-                payer={payer}
-                debtor={currentMember}
-                currentShare={split.share}
-                carryForward={split.carry_forward}
-                splitId={split.id}
-                amountPaid={split.amount_paid || 0}
-                paymentStatus={split.payment_status || 'unpaid'}
-                isPayerView={currentMember.id === payer.id}
-                onMarkPaid={handleMarkPaid}
-                onPayLater={(id) => handleDismiss(id)}
-                onConfirmPayment={onConfirmPayment}
-                isPaid={false}
-                compact={false}
-              />
-            ))
-          )}
+          ) : (() => {
+            // Group visible bills by payer id
+            const groups = {};
+            visible.forEach((bill) => {
+              const payerId = bill.payer.id;
+              if (!groups[payerId]) groups[payerId] = { payer: bill.payer, bills: [] };
+              groups[payerId].bills.push(bill);
+            });
+
+            return Object.values(groups).map(({ payer, bills }) => {
+              const grossOwed = bills.reduce(
+                (sum, b) => sum + b.split.share + (b.split.carry_forward || 0), 0
+              );
+              const netInfo = netByPayer[payer.id];
+              // iOwe=true → we owe them net; iOwe=false → they owe us net (mutual offset flips direction)
+              const theyOweUs = netInfo && !netInfo.iOwe;
+              const showNetBanner = netInfo && netInfo.iOwe && netInfo.netAmount < grossOwed;
+
+              return (
+                <div key={payer.id} className="space-y-2">
+                  {/* Net offset banner */}
+                  {(showNetBanner || theyOweUs) && (
+                    <div className="flex items-start gap-2.5 rounded-2xl p-3"
+                      style={{
+                        background: theyOweUs ? '#F0FDF4' : '#EEF2FF',
+                        border: `1px solid ${theyOweUs ? '#BBF7D0' : '#C7D2FE'}`,
+                      }}>
+                      <Info size={14} strokeWidth={2}
+                        style={{ color: theyOweUs ? '#16A34A' : '#4F46E5', flexShrink: 0, marginTop: 1 }} />
+                      <div className="flex-1 min-w-0">
+                        {theyOweUs ? (
+                          <>
+                            <p className="text-xs font-semibold" style={{ color: '#15803D' }}>
+                              Mutual offset — {payer.name} owes you more
+                            </p>
+                            <p className="text-xs mt-0.5" style={{ color: '#16A34A' }}>
+                              {payer.name} owes you{' '}
+                              <span className="font-bold">{formatRupees(netInfo.netAmount)} net</span>
+                              {' '}after cancelling mutual debts. No payment needed from you.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-xs font-semibold" style={{ color: '#3730A3' }}>
+                              Mutual offset applied
+                            </p>
+                            <p className="text-xs mt-0.5" style={{ color: '#4F46E5' }}>
+                              Gross: {formatRupees(grossOwed)} — {payer.name} also owes you{' '}
+                              <span className="font-bold">{formatRupees(grossOwed - netInfo.netAmount)}</span>.
+                              {' '}Net you owe:{' '}
+                              <span className="font-bold">{formatRupees(netInfo.netAmount)}</span>
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Individual split cards — hide if they owe us net (no payment needed from us) */}
+                  {!theyOweUs && bills.map(({ expense, split }) => (
+                    <PaymentCard
+                      key={split.id}
+                      expense={expense}
+                      payer={payer}
+                      debtor={currentMember}
+                      currentShare={split.share}
+                      carryForward={split.carry_forward}
+                      splitId={split.id}
+                      amountPaid={split.amount_paid || 0}
+                      paymentStatus={split.payment_status || 'unpaid'}
+                      isPayerView={currentMember?.id === payer.id}
+                      onMarkPaid={handleMarkPaid}
+                      onPayLater={(id) => handleDismiss(id)}
+                      onConfirmPayment={onConfirmPayment}
+                      isPaid={false}
+                      compact={false}
+                    />
+                  ))}
+                </div>
+              );
+            });
+          })()}
         </div>
 
         {/* Footer */}

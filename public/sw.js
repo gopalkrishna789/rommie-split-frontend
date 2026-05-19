@@ -1,7 +1,7 @@
 // Custom Service Worker for Roomie Split
 // Handles: offline fallback, push notifications, background sync
 
-const CACHE_NAME = 'roomie-split-v1';
+const CACHE_NAME = 'roomie-split-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Static assets to precache
@@ -140,7 +140,27 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// ── Notification Click ────────────────────────────────────────────────────
+// ── Background Sync ───────────────────────────────────────────────────────
+// When the browser regains connectivity, notify all open clients so they
+// can replay the IndexedDB offline queue via useOfflineQueue hook.
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-expenses') {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then((clients) => {
+        clients.forEach((client) => client.postMessage({ type: 'SYNC_QUEUE' }));
+      })
+    );
+  }
+});
+
+// Also notify clients when we come back online (fetch succeeds after offline)
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'PING') {
+    event.source?.postMessage({ type: 'PONG' });
+  }
+});
+
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
