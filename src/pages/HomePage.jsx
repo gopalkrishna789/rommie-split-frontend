@@ -57,7 +57,9 @@ export default function HomePage() {
     });
     
     // Show onboarding tour only if not completed in database
-    if (!member.tour_completed) {
+    // tour_completed can be 0/1 (SQLite) or true/false (MongoDB) — coerce to boolean
+    const tourDone = member.tour_completed === true || member.tour_completed === 1 || localStorage.getItem('roomie_tour_done') === '1';
+    if (!tourDone) {
       setTimeout(() => setShowTour(true), 800);
     }
     
